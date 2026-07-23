@@ -50,6 +50,21 @@ npx jest && npx tsc --noEmit
 See `READY.md` for the full first-run walkthrough and `AGENTS.md` for architecture and
 conventions. Design docs live in `docs/`.
 
+## Unsigned IPA
+
+GitHub Actions can build an unsigned device IPA without an Apple certificate:
+
+1. Open **Actions** > **Build unsigned IPA** in the GitHub repository.
+2. Select **Run workflow** and choose the branch or tag to build.
+3. Download the `Hermes-Mobile-unsigned-*` artifact from the completed run.
+
+Pushing a tag that starts with `ios-v` also starts a build, for example
+`git tag ios-v1.0.0 && git push origin ios-v1.0.0`.
+
+The artifact is retained for 14 days. Because it has no code signature, it cannot be
+installed directly on a normal iPhone. Sign it separately or use an installation
+environment that supports unsigned apps.
+
 ## Roadmap
 
 - QR pairing with per-device revocable tokens (server plugin already shipped:
