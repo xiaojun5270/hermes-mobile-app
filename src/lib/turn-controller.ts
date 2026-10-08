@@ -221,10 +221,12 @@ export function resumeRunning(res: {
 }): boolean {
   return (
     res.running === true ||
-    res.inflight?.streaming === true ||
     res.status === 'working' ||
+    res.status === 'streaming' ||
     res.status === 'waiting' ||
-    res.status === 'starting'
+    res.status === 'starting' ||
+    res.status === 'resuming' ||
+    (res.status !== 'idle' && res.inflight?.streaming === true)
   );
 }
 
@@ -242,11 +244,11 @@ export function kindForMethod(method: string): RequestKind | null {
 }
 
 const LABELS: Record<CancelReason, string> = {
-  interrupted: 'Stopped',
-  timeout: 'Timed out',
-  resolved: 'Answered elsewhere',
-  session_closed: 'Closed',
-  shutdown: 'Closed',
+  interrupted: '已停止',
+  timeout: '已超时',
+  resolved: '已在其他设备回答',
+  session_closed: '已关闭',
+  shutdown: '已关闭',
 };
 
 export function cancelLabel(reason: CancelReason): string {

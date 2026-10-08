@@ -2,6 +2,7 @@
 // Schedule strings are parsed SERVER-side (cron/jobs.py); the client only
 // validates presence and shows the gateway-rendered display as the preview.
 import { scheduleDisplay, type CronJob } from '../api/cron';
+import { scheduleLabel, scheduleWire } from './zh-cn';
 
 export interface CronFormValues {
   name: string;
@@ -28,8 +29,15 @@ export const SCHEDULE_PRESETS = [
  * create surface (everything else has server defaults). Empty result = valid. */
 export function validateCronForm(values: Pick<CronFormValues, 'schedule' | 'prompt'>): CronFormErrors {
   const errors: CronFormErrors = {};
-  if (!values.schedule.trim()) errors.schedule = 'A schedule is required — try “every day at 9am”.';
-  if (!values.prompt.trim()) errors.prompt = 'A prompt is required — what should the agent do each run?';
+  if (!values.schedule.trim()) errors.schedule = '请填写运行计划，例如每天 9 点。';
+  else {
+    try {
+      scheduleWire(values.schedule);
+    } catch (error) {
+      errors.schedule = (error as Error).message;
+    }
+  }
+  if (!values.prompt.trim()) errors.prompt = '请填写任务内容。';
   return errors;
 }
 
@@ -45,9 +53,9 @@ export function initialScheduleText(job: Pick<CronJob, 'schedule' | 'schedule_di
  * honest that parsing happens on save. */
 export function schedulePreview(input: string, savedScheduleText: string): string {
   const t = input.trim();
-  if (!t) return 'e.g. “every day at 9am”, “every 2 hours”, “fridays at 17:30”';
-  if (savedScheduleText && t === savedScheduleText.trim()) return `Runs ${t}`;
-  return `“${t}” — checked by the gateway when you save`;
+  if (!t) return '例如每天 9 点、每 2 小时、周五 17:30';
+  if (savedScheduleText && t === savedScheduleText.trim()) return `运行计划：${scheduleLabel(t)}`;
+  return `“${scheduleLabel(t)}”，保存时由网关检查`;
 }
 
 /** Minimal PUT `updates` diff for an edit. Only changed fields are sent, so an
@@ -64,7 +72,10 @@ export function buildCronUpdates(
   const prompt = form.prompt.trim();
   if (prompt !== (job.prompt ?? '')) updates.prompt = prompt;
   const schedule = form.schedule.trim();
-  if (schedule !== savedScheduleText.trim()) updates.schedule = schedule;
+  if (schedule !== savedScheduleText.trim()) {
+    const wire = scheduleWire(schedule);
+    if (wire !== savedScheduleText.trim()) updates.schedule = wire;
+  }
   if (form.deliver && form.deliver !== (job.deliver ?? 'local')) updates.deliver = form.deliver;
   return updates;
 }

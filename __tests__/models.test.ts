@@ -121,7 +121,7 @@ describe('modelDisplayName', () => {
     expect(modelDisplayName('Hermes-4-405B')).toBe('Hermes-4-405B');
   });
   it('handles empty ids', () => {
-    expect(modelDisplayName('')).toBe('Not configured');
+    expect(modelDisplayName('')).toBe('未配置');
   });
   it('does not return an empty tail for a trailing slash', () => {
     expect(modelDisplayName('weird/')).toBe('weird/');
@@ -133,15 +133,15 @@ describe('pricingLine', () => {
     expect(pricingLine(undefined)).toBeNull();
   });
   it('labels free models', () => {
-    expect(pricingLine({ input: '$0.00', output: '$0.00', cache: null, free: true })).toBe('Free');
+    expect(pricingLine({ input: '$0.00', output: '$0.00', cache: null, free: true })).toBe('免费');
   });
   it('joins input/output prices', () => {
     expect(pricingLine({ input: '$3.00', output: '$15.00', cache: '$0.30', free: false })).toBe(
-      '$3.00 in · $15.00 out /Mtok',
+      '输入 $3.00 · 输出 $15.00 / 百万词元',
     );
   });
   it('degrades when only one side is present', () => {
-    expect(pricingLine({ input: '$3.00', output: '', cache: null, free: false })).toBe('$3.00 in /Mtok');
+    expect(pricingLine({ input: '$3.00', output: '', cache: null, free: false })).toBe('输入 $3.00 / 百万词元');
     expect(pricingLine({ input: '', output: '', cache: null, free: false })).toBeNull();
   });
 });
@@ -152,8 +152,8 @@ describe('hintBadges', () => {
     expect(hintBadges({ fast: false, reasoning: false })).toEqual([]);
   });
   it('collects fast + reasoning', () => {
-    expect(hintBadges({ fast: true, reasoning: true })).toEqual(['Fast', 'Reasoning']);
-    expect(hintBadges({ fast: true, reasoning: false })).toEqual(['Fast']);
+    expect(hintBadges({ fast: true, reasoning: true })).toEqual(['快速', '思考过程']);
+    expect(hintBadges({ fast: true, reasoning: false })).toEqual(['快速']);
   });
 });
 
@@ -165,7 +165,7 @@ describe('capabilityBadges', () => {
   it('orders reasoning, vision, tools', () => {
     expect(
       capabilityBadges({ supports_reasoning: true, supports_vision: true, supports_tools: true }),
-    ).toEqual(['Reasoning', 'Vision', 'Tools']);
+    ).toEqual(['思考过程', '视觉', '工具']);
   });
 });
 
@@ -176,15 +176,15 @@ describe('formatContext', () => {
     expect(formatContext(-1)).toBeNull();
   });
   it('formats thousands and millions, trimming .0', () => {
-    expect(formatContext(200000)).toBe('200K context');
-    expect(formatContext(128000)).toBe('128K context');
-    expect(formatContext(1048576)).toBe('1M context');
-    expect(formatContext(1500000)).toBe('1.5M context');
-    expect(formatContext(512)).toBe('512 context');
+    expect(formatContext(200000)).toBe('200K 上下文');
+    expect(formatContext(128000)).toBe('128K 上下文');
+    expect(formatContext(1048576)).toBe('1M 上下文');
+    expect(formatContext(1500000)).toBe('1.5M 上下文');
+    expect(formatContext(512)).toBe('512 上下文');
   });
 });
 
-describe('isModelUnavailable', () => {
+describe('isModel不可用', () => {
   const row: ProviderRow = {
     slug: 'nous',
     name: 'Nous',

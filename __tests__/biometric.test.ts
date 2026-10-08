@@ -7,8 +7,8 @@ const auth = LocalAuthentication.authenticateAsync as jest.Mock;
 
 test('passes the reason and keeps the device-passcode fallback', async () => {
   auth.mockResolvedValueOnce({ success: true });
-  expect(await confirmWithBiometrics('Send KEY to Hermes')).toEqual({ ok: true });
-  expect(auth).toHaveBeenCalledWith({ promptMessage: 'Send KEY to Hermes', cancelLabel: 'Cancel', disableDeviceFallback: false });
+  expect(await confirmWithBiometrics('Send KEY 给 Hermes')).toEqual({ ok: true });
+  expect(auth).toHaveBeenCalledWith({ promptMessage: 'Send KEY 给 Hermes', cancelLabel: '取消', disableDeviceFallback: false });
 });
 test.each([
   ['user_cancel', 'cancelled'], ['app_cancel', 'cancelled'], ['system_cancel', 'cancelled'],

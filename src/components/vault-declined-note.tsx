@@ -3,7 +3,7 @@ import { Text, View } from 'react-native';
 import { Icon } from '@/components/icon';
 import { useTheme } from '@/theme';
 
-export const VAULT_DECLINED_TEXT = 'Hermes asked for a password-manager action — declined on the phone.';
+export const VAULT_DECLINED_TEXT = 'Hermes 请求操作密码管理器，手机端已拒绝。';
 
 export function VaultDeclinedNote() {
   const { colors } = useTheme();

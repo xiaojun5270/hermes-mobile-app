@@ -68,7 +68,7 @@ describe('RestClient', () => {
 
   it('falls back to a generic message when the error body has no detail', async () => {
     const c = new RestClient('http://h', new CookieJar(), fakeFetch(500, { nope: 1 }) as any);
-    await expect(c.get('/api/x')).rejects.toThrow('HTTP 500 on /api/x');
+    await expect(c.get('/api/x')).rejects.toThrow('请求 /api/x 失败（HTTP 500）');
   });
 
   it('listSessions hits the right URL', async () => {
@@ -243,7 +243,7 @@ describe('RestClient request timeout', () => {
       await Promise.resolve(); // let send() install the timer + abort listener
       jest.advanceTimersByTime(REQUEST_TIMEOUT_MS);
       expect(captured?.aborted).toBe(true); // fails fast if the timer never fired
-      await expect(p).rejects.toThrow(/timed out/i);
+      await expect(p).rejects.toThrow('请求超时（20 秒）');
     } finally {
       jest.useRealTimers();
     }
@@ -275,7 +275,7 @@ describe('RestClient request timeout', () => {
       await Promise.resolve();
       await Promise.resolve();
       jest.advanceTimersByTime(REQUEST_TIMEOUT_MS);
-      await expect(p).rejects.toThrow(/timed out/i);
+      await expect(p).rejects.toThrow('请求超时（20 秒）');
     } finally {
       jest.useRealTimers();
     }
@@ -375,7 +375,7 @@ describe('RestClient per-request timeout', () => {
       expect(signal()?.aborted).toBe(false);
       jest.advanceTimersByTime(45_000 - REQUEST_TIMEOUT_MS);
       expect(signal()?.aborted).toBe(true);
-      await expect(p).rejects.toThrow('request timed out after 45s');
+      await expect(p).rejects.toThrow('请求超时（45 秒）');
     } finally {
       jest.useRealTimers();
     }
@@ -399,7 +399,7 @@ describe('RestClient per-request timeout', () => {
       expect(captured?.aborted).toBe(false);
       jest.advanceTimersByTime(45_000 - REQUEST_TIMEOUT_MS);
       expect(captured?.aborted).toBe(true);
-      await expect(p).rejects.toThrow('request timed out after 45s');
+      await expect(p).rejects.toThrow('请求超时（45 秒）');
     } finally {
       jest.useRealTimers();
     }
@@ -414,7 +414,7 @@ describe('RestClient per-request timeout', () => {
       await Promise.resolve();
       jest.advanceTimersByTime(MAX_REQUEST_TIMEOUT_MS);
       expect(signal()?.aborted).toBe(true);
-      await expect(p).rejects.toThrow('request timed out after 45s');
+      await expect(p).rejects.toThrow('请求超时（45 秒）');
     } finally {
       jest.useRealTimers();
     }
@@ -428,7 +428,7 @@ describe('RestClient per-request timeout', () => {
       p.catch(() => {});
       await Promise.resolve();
       jest.advanceTimersByTime(REQUEST_TIMEOUT_MS);
-      await expect(p).rejects.toThrow('request timed out after 20s');
+      await expect(p).rejects.toThrow('请求超时（20 秒）');
     } finally {
       jest.useRealTimers();
     }

@@ -61,12 +61,12 @@ export function resetMemory(r: RestClient, target: MemoryResetTarget): Promise<M
 
 /** Human label for a provider value as returned in `MemoryStatus.active`. */
 export function providerLabel(provider: string): string {
-  return provider === BUILT_IN_PROVIDER ? 'Built-in files' : provider;
+  return provider === BUILT_IN_PROVIDER ? '内置文件' : provider;
 }
 
 /** "Empty" for absent files (size 0), else a compact human-readable size. */
 export function formatBytes(bytes: number): string {
-  if (!Number.isFinite(bytes) || bytes <= 0) return 'Empty';
+  if (!Number.isFinite(bytes) || bytes <= 0) return '暂无内容';
   if (bytes < 1024) return `${Math.round(bytes)} B`;
   if (bytes < 1024 * 1024) return `${trimDecimal(bytes / 1024)} KB`;
   return `${trimDecimal(bytes / (1024 * 1024))} MB`;
@@ -142,7 +142,7 @@ export function isMemoryFileName(name: unknown): name is MemoryFileName {
 
 /** Human label matching the admin screen's wording. */
 export function memoryFileLabel(name: MemoryFileName): string {
-  return name === 'MEMORY.md' ? 'Agent memory' : 'User profile';
+  return name === 'MEMORY.md' ? '智能体记忆' : '用户档案';
 }
 
 /** UTF-8 byte length of a JS string, mirroring the server's len(content.encode("utf-8")).
@@ -173,11 +173,11 @@ export function isMemoryPluginMissing(e: unknown): boolean {
 /** User-facing message for a failed memory-file save. */
 export function memoryWriteErrorMessage(e: unknown): string {
   if (e instanceof HttpError) {
-    if (e.status === 413) return `Too large — memory files are capped at ${formatBytes(MEMORY_FILE_MAX_BYTES)}.`;
-    if (e.status === 403) return 'Permission denied — this session is not allowed to edit memory files.';
-    if (e.status === 404 || e.status === 405) return 'Update the hermes-mobile plugin on the gateway to edit memory.';
-    if (e.status === 503) return 'Memory store unavailable on the gateway — try again.';
+    if (e.status === 413) return `文件过大，记忆文件最多为 ${formatBytes(MEMORY_FILE_MAX_BYTES)}。`;
+    if (e.status === 403) return '权限不足，此会话无法编辑记忆文件。';
+    if (e.status === 404 || e.status === 405) return '请更新网关上的 hermes-mobile 插件后再编辑记忆。';
+    if (e.status === 503) return '网关的记忆存储不可用，请重试。';
   }
   if (e instanceof Error && e.message) return e.message;
-  return 'Save failed — the gateway did not accept the change.';
+  return '保存失败，网关未接受修改。';
 }

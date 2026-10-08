@@ -1,0 +1,126 @@
+name: Build unsigned IPA
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [feat/file-attachments]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: unsigned-ipa-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build iOS app without code signing
+    runs-on: macos-26
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          cache: npm
+      - name: Check Xcode against React Native's minimum
+        run: |
+          set -euo pipefail
+          mkdir -p .expo/ipa-logs
+          xcodebuild -version | tee .expo/ipa-logs/xcode-version.log
+      - name: Install dependencies
+        run: |
+          set -euo pipefail
+          npm ci 2>&1 | tee .expo/ipa-logs/npm-ci.log
+          minimum="$(ruby -r ./node_modules/react-native/scripts/cocoapods/helpers.rb -e 'puts Helpers::Constants.min_xcode_version_supported')"
+          installed="$(xcodebuild -version | awk '/^Xcode / {print $2}')"
+          ruby -r rubygems -e 'abort "Xcode #{ARGV[0]} < React Native minimum #{ARGV[1]}" if Gem::Version.new(ARGV[0]) < Gem::Version.new(ARGV[1])' "$installed" "$minimum"
+      - name: Typecheck
+        run: |
+          set -euo pipefail
+          npx tsc --noEmit 2>&1 | tee .expo/ipa-logs/typecheck.log
+      - name: Run unit tests
+        run: |
+          set -euo pipefail
+          npx jest --runInBand 2>&1 | tee .expo/ipa-logs/jest.log
+      - name: Lint
+        run: |
+          set -euo pipefail
+          npm run lint 2>&1 | tee .expo/ipa-logs/lint.log
+      - name: Generate the iOS project
+        run: |
+          set -euo pipefail
+          npx expo prebuild --platform ios --clean 2>&1 | tee .expo/ipa-logs/prebuild.log
+      - name: Build the unsigned app
+        run: |
+          set -euo pipefail
+          workspace="$(find ios -maxdepth 1 -name '*.xcworkspace' -print -quit)"
+          test -n "$workspace"
+          scheme="$(basename "$workspace" .xcworkspace)"
+          xcodebuild \
+            -workspace "$workspace" \
+            -scheme "$scheme" \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath "$PWD/.expo/ipa-build" \
+            -resultBundlePath "$PWD/.expo/ipa-logs/build.xcresult" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY='' \
+            DEVELOPMENT_TEAM='' \
+            build 2>&1 | tee .expo/ipa-logs/xcodebuild.log
+      - name: Validate app identity and package IPA
+        run: |
+          set -euo pipefail
+          app_path="$(find .expo/ipa-build/Build/Products/Release-iphoneos -maxdepth 1 -name '*.app' -print -quit)"
+          test -n "$app_path"
+          plist="$app_path/Info.plist"
+          version="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$plist")"
+          build="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$plist")"
+          bundle="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$plist")"
+          test "$version" = '1.0.2'
+          test "$build" = '3'
+          test "$bundle" = 'com.dintinoconte.hermesmobile'
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleDisplayName' "$plist")" = 'Hermes 智能体'
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleDevelopmentRegion' "$plist")" = 'zh_CN'
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleLocalizations:0' "$plist")" = 'zh_CN'
+          python3 -c 'import plistlib, sys; p = plistlib.load(open(sys.argv[1], "rb")); keys = ["NSCameraUsageDescription", "NSPhotoLibraryUsageDescription", "NSMicrophoneUsageDescription", "NSFaceIDUsageDescription"]; assert all(any("\u4e00" <= c <= "\u9fff" for c in p[k]) for k in keys), "Native permissions must be Chinese"' "$plist"
+          printf 'version=%s\nbuild=%s\nbundle=%s\ncommit=%s\n' "$version" "$build" "$bundle" "$GITHUB_SHA" | tee .expo/ipa-logs/identity.txt
+          mkdir -p .expo/ipa-package/Payload .expo/ipa-artifacts
+          cp -R "$app_path" .expo/ipa-package/Payload/
+          (
+            cd .expo/ipa-package
+            zip -qry ../ipa-artifacts/Hermes-Mobile-1.0.2-build3-unsigned.ipa Payload
+          )
+          (
+            cd .expo/ipa-artifacts
+            python3 -c 'import sys, zipfile; z = zipfile.ZipFile(sys.argv[1]); bad = z.testzip(); valid = any(len(p) == 3 and p[0] == "Payload" and len(p[1]) > 4 and p[1].endswith(".app") and p[2] == "Info.plist" for p in (name.split("/") for name in z.namelist())); z.close(); sys.exit(0 if bad is None and valid else "Invalid IPA: missing Payload/<name>.app/Info.plist or corrupt ZIP entry")' Hermes-Mobile-1.0.2-build3-unsigned.ipa
+            shasum -a 256 Hermes-Mobile-1.0.2-build3-unsigned.ipa > Hermes-Mobile-1.0.2-build3-unsigned.ipa.sha256
+            shasum -a 256 -c Hermes-Mobile-1.0.2-build3-unsigned.ipa.sha256
+          )
+      - name: Upload unsigned IPA and checksum
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: Hermes-Mobile-1.0.2-build3-unsigned-${{ github.run_number }}
+          path: .expo/ipa-artifacts/*
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
+          include-hidden-files: true
+      - name: Upload build diagnostics
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: Hermes-Mobile-iOS-build-logs-${{ github.run_number }}
+          path: .expo/ipa-logs/
+          if-no-files-found: warn
+          retention-days: 14
+          include-hidden-files: true

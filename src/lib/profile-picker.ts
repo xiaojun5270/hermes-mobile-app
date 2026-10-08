@@ -13,7 +13,7 @@ export function showProfilePicker(): void {
     void setSelectedProfile(name);
   };
   showActionSheet(
-    'Switch profile',
+    '切换配置档案',
     names.map((n) => ({
       label: n === current ? `${n} ✓` : n,
       onPress: () => pick(n),

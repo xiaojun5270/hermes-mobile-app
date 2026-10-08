@@ -70,16 +70,17 @@ export function ConnectorTestCard({
         gap: 12,
       }}
     >
-      <CardButton label="Test connection" a11y="Test connection" onPress={onTest} disabled={running || !connected || disabled} />
+      <CardButton label="测试连接" a11y="测试连接" onPress={onTest} disabled={running || !connected || disabled} />
       {!connected ? (
         <Text style={{ color: colors.textFaint, fontSize: 13 }}>
-          Testing needs a connected chat. Go back to the chat, wait for it to connect, then return.
+
+          请先返回会话并等待连接成功，再回来测试。
         </Text>
       ) : null}
       {running ? (
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
           <ActivityIndicator color={colors.textDim} />
-          <Text style={{ color: colors.textDim, fontSize: 14 }}>Testing…</Text>
+          <Text style={{ color: colors.textDim, fontSize: 14 }}>正在测试…</Text>
         </View>
       ) : null}
       {state.phase === 'done' ? <Result outcome={state.outcome} explainedAbove={explainedAbove} /> : null}

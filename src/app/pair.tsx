@@ -34,7 +34,7 @@ export default function PairScreen() {
       setError(null);
     } catch (e) {
       scanLocked.current = false;
-      setError(e instanceof PairingParseError ? e.message : 'Could not read that pairing code.');
+      setError(e instanceof PairingParseError ? e.message : '无法读取配对码。');
     }
   }
 
@@ -64,7 +64,7 @@ export default function PairScreen() {
       setError(
         e instanceof Error && e.message
           ? e.message
-          : 'Could not reach the gateway. Check the address and your network.',
+          : '无法连接网关，请检查地址和网络。',
       );
       // The scanned RT is single-use only on success — a failed refresh means
       // it is dead either way, so force a fresh scan rather than a retry.
@@ -79,7 +79,7 @@ export default function PairScreen() {
 
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={process.env.EXPO_OS === 'ios' ? 'padding' : undefined}>
-      <Stack.Screen options={{ title: 'Pair Device' }} />
+      <Stack.Screen options={{ title: '设备配对' }} />
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
         keyboardShouldPersistTaps="handled"
@@ -87,8 +87,7 @@ export default function PairScreen() {
         style={{ backgroundColor: colors.bg }}
       >
         <Text style={{ color: colors.textDim, fontSize: 15, lineHeight: 21 }}>
-          Run <Text style={{ color: colors.text, fontWeight: '600' }}>hermes mobile pair</Text> on your
-          gateway, then scan the QR code it prints.
+          在网关运行 <Text style={{ color: colors.text, fontWeight: '600' }}>hermes mobile pair</Text>，然后扫描显示的二维码。
         </Text>
 
         {/* Scanner / confirm card */}
@@ -118,16 +117,16 @@ export default function PairScreen() {
                 <Icon sf="checkmark.seal.fill" size={26} color={colors.onAccent} />
               </View>
               <View style={{ alignItems: 'center', gap: 4 }}>
-                <Text style={{ color: colors.text, fontSize: 17, fontWeight: '600' }}>Pair with this gateway?</Text>
+                <Text style={{ color: colors.text, fontSize: 17, fontWeight: '600' }}>与此网关配对？</Text>
                 <Text selectable style={{ color: colors.textDim, fontSize: 15, textAlign: 'center' }}>
                   {pairingHost(pending.url)}
                 </Text>
-                <Text style={{ color: colors.textFaint, fontSize: 13 }}>device {pending.deviceId}</Text>
+                <Text style={{ color: colors.textFaint, fontSize: 13 }}>设备 {pending.deviceId}</Text>
               </View>
               <View style={{ alignSelf: 'stretch', gap: 10 }}>
                 <Pressable
                   accessibilityRole="button"
-                  accessibilityLabel={`Connect to ${pairingHost(pending.url)}`}
+                  accessibilityLabel={`连接到 ${pairingHost(pending.url)}`}
                   onPress={onConfirm}
                   disabled={busy}
                   style={({ pressed }) => ({
@@ -142,17 +141,17 @@ export default function PairScreen() {
                   {busy ? (
                     <ActivityIndicator color={colors.onAccent} />
                   ) : (
-                    <Text style={{ color: colors.onAccent, fontSize: 16.5, fontWeight: '600' }}>Connect</Text>
+                    <Text style={{ color: colors.onAccent, fontSize: 16.5, fontWeight: '600' }}>连接</Text>
                   )}
                 </Pressable>
                 <Pressable
                   accessibilityRole="button"
-                  accessibilityLabel="Cancel and scan again"
+                  accessibilityLabel="取消并重新扫描"
                   onPress={rescan}
                   disabled={busy}
                   style={{ minHeight: 44, alignItems: 'center', justifyContent: 'center' }}
                 >
-                  <Text style={{ color: colors.textDim, fontSize: 15.5 }}>Scan again</Text>
+                  <Text style={{ color: colors.textDim, fontSize: 15.5 }}>重新扫描</Text>
                 </Pressable>
               </View>
             </View>
@@ -162,20 +161,20 @@ export default function PairScreen() {
               facing="back"
               barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
               onBarcodeScanned={onScanned}
-              accessibilityLabel="Camera viewfinder for scanning the pairing QR code"
+              accessibilityLabel="扫描配对二维码的相机取景框"
             />
           ) : (
             <View style={{ padding: 24, gap: 14, alignItems: 'center' }}>
               <Icon sf="qrcode.viewfinder" size={44} color={colors.textFaint} />
               <Text style={{ color: colors.textDim, fontSize: 15, textAlign: 'center' }}>
                 {permission?.canAskAgain === false
-                  ? 'Camera access is off. Enable it in Settings, or paste the pairing code below.'
-                  : 'Hermes needs camera access to scan the pairing QR code.'}
+                  ? '相机权限未开启，请在系统设置中启用，或在下方粘贴配对码。'
+                  : 'Hermes 需要相机权限来扫描配对二维码。'}
               </Text>
               {permission?.canAskAgain !== false ? (
                 <Pressable
                   accessibilityRole="button"
-                  accessibilityLabel="Allow camera access"
+                  accessibilityLabel="允许访问相机"
                   onPress={() => requestPermission()}
                   style={({ pressed }) => ({
                     backgroundColor: pressed ? colors.accentPressed : colors.accent,
@@ -186,7 +185,7 @@ export default function PairScreen() {
                     justifyContent: 'center',
                   })}
                 >
-                  <Text style={{ color: colors.onAccent, fontSize: 15.5, fontWeight: '600' }}>Allow camera</Text>
+                  <Text style={{ color: colors.onAccent, fontSize: 15.5, fontWeight: '600' }}>允许使用相机</Text>
                 </Pressable>
               ) : null}
             </View>
@@ -203,7 +202,8 @@ export default function PairScreen() {
         {!pending ? (
           <View style={{ gap: 10 }}>
             <Text style={{ color: colors.textFaint, fontSize: 13, textTransform: 'uppercase', letterSpacing: 0.6 }}>
-              Or paste the pairing code
+
+              或粘贴配对码
             </Text>
             <View
               style={{
@@ -224,12 +224,12 @@ export default function PairScreen() {
                 autoCorrect={false}
                 placeholder='{"url":"http://…:9119","rt":"…","device_id":"…"}'
                 placeholderTextColor={colors.textFaint}
-                accessibilityLabel="Pairing code JSON"
+                accessibilityLabel="JSON 配对码"
               />
             </View>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Use pasted pairing code"
+              accessibilityLabel="使用粘贴的配对码"
               onPress={() => handlePayload(pasted)}
               disabled={!pasted.trim() || busy}
               style={({ pressed }) => ({
@@ -239,7 +239,7 @@ export default function PairScreen() {
                 justifyContent: 'center',
               })}
             >
-              <Text style={{ color: colors.accent, fontSize: 16, fontWeight: '600' }}>Use pasted code</Text>
+              <Text style={{ color: colors.accent, fontSize: 16, fontWeight: '600' }}>使用配对码</Text>
             </Pressable>
           </View>
         ) : null}

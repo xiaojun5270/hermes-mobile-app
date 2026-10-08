@@ -7,16 +7,16 @@ import type { ChatItem } from '@/components/message-row';
 function textLine(item: ChatItem): string | null {
   switch (item.role) {
     case 'user':
-      return item.text.trim() ? `You: ${item.text}` : null;
+      return item.text.trim() ? `你：${item.text}` : null;
     case 'assistant':
       return item.text.trim() ? `Hermes: ${item.text}` : null;
     case 'tool': {
       const name = item.tool?.name ?? item.text ?? 'tool';
       const summary = item.tool?.summary ?? item.tool?.context;
-      return `[tool] ${name}${summary ? ` — ${summary}` : ''}`;
+      return `[工具] ${name}${summary ? `：${summary}` : ''}`;
     }
     case 'status':
-      return item.text.trim() ? `[status] ${item.text}` : null;
+      return item.text.trim() ? `[状态] ${item.text}` : null;
     default:
       return null;
   }

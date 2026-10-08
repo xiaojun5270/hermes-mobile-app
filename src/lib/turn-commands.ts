@@ -59,7 +59,7 @@ export function createTurnCommands(deps: TurnCommandDeps): TurnCommands {
 
   function liveId(): string {
     const id = deps.liveSessionId();
-    if (!id) throw new Error('Not connected.');
+    if (!id) throw new Error('尚未连接。');
     return id;
   }
 
@@ -79,14 +79,14 @@ export function createTurnCommands(deps: TurnCommandDeps): TurnCommands {
     // F8: check connectivity BEFORE dispatching stop.sent — an id-less stop must never move the
     // turn into 'stopping' (there would be nothing to time out, and Stop would look stuck).
     const sid = deps.liveSessionId();
-    if (!sid) return { ok: false, message: 'Not connected.' };
+    if (!sid) return { ok: false, message: '尚未连接。' };
     deps.dispatch({ type: 'stop.sent' });
     try {
       // The result is ignored: it reports "interrupted" even for an idle session.
       await withStaleSessionRetry(sid, (id) => deps.call('session.interrupt', { session_id: id }), deps.resumeStored);
     } catch (e) {
       deps.dispatch({ type: 'stop.failed' });
-      return { ok: false, message: messageOf(e, 'Could not stop the response.') };
+      return { ok: false, message: messageOf(e, '无法停止回复。') };
     }
     clearFallback();
     cancelFallback = deps.setTimer(() => {
@@ -115,7 +115,7 @@ export function createTurnCommands(deps: TurnCommandDeps): TurnCommands {
       status = res.status;
     } catch (e) {
       if (!(e instanceof RpcError) || e.code !== AGENT_BUILDING_CODE) {
-        return { kind: 'error', message: messageOf(e, 'Could not steer.') };
+        return { kind: 'error', message: messageOf(e, '无法发送引导。') };
       }
       status = 'rejected'; // agent still building: queue it (a plain submit would hard-interrupt)
     }
@@ -124,7 +124,7 @@ export function createTurnCommands(deps: TurnCommandDeps): TurnCommands {
       await submitQueued(text);
       return { kind: 'submitted' };
     } catch (e) {
-      return { kind: 'error', message: messageOf(e, 'Could not send.') };
+      return { kind: 'error', message: messageOf(e, '无法发送。') };
     }
   }
 

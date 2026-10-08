@@ -74,7 +74,7 @@ describe('approve', () => {
   });
   it('0.21.5: unknown id in the registry → card closed, error outcome', async () => {
     const h = harness(false);
-    expect(await h.r.approve(h.card({}), 'deny')).toEqual({ ok: false, message: 'This request is no longer open.' });
+    expect(await h.r.approve(h.card({}), 'deny')).toEqual({ ok: false, message: '此请求已关闭。' });
     expect(h.actions).toEqual([{ type: 'request.cancelled', id: 'srq-1', reason: 'session_closed' }]);
   });
   it('a settled card is not answered twice (double tap)', async () => {
@@ -149,7 +149,7 @@ describe('clarify', () => {
     expect(h.drop).toHaveBeenCalledTimes(1);
     expect(h.drop).toHaveBeenCalledWith('srq-1');
   });
-  it('lock: expired → Timed out', async () => {
+  it('lock: expired → 已超时', async () => {
     const h = harness();
     h.reply('clarify.lock', { status: 'expired' });
     expect(await h.r.clarifyLock(h.clarify(), 'q0', 'x')).toBe('expired');
@@ -168,7 +168,7 @@ describe('clarify', () => {
     expect(await h.r.clarifyLock(h.clarify({ status: 'answering' }), 'q0', 'x')).toBe('failed');
     expect(h.calls).toHaveLength(0);
   });
-  it('submitAll locks the given questions in order and resolves', async () => {
+  it('submitAll locks the given个问题 in order and resolves', async () => {
     const h = harness();
     h.reply('clarify.lock', { status: 'ok', remaining: ['q2'] }, { status: 'ok', remaining: [] });
     expect(await h.r.clarifySubmitAll(h.clarify(), [{ qid: 'q1', answer: 'x' }, { qid: 'q2', answer: '' }])).toBe('resolved');
@@ -263,7 +263,7 @@ describe('answers guard on the store, not the rendered card (m1)', () => {
     h.r.value(secret, 'v');
     expect(h.respond.mock.calls.map((c) => c[0])).toEqual(['c1', 'c2', 's1']);
   });
-  it('a lock tapped while Submit all is in flight is not sent', async () => {
+  it('a lock tapped while 全部提交 is in flight is not sent', async () => {
     const h = harness();
     h.reply('clarify.lock', { status: 'ok', remaining: [] });
     const rendered = h.clarify();

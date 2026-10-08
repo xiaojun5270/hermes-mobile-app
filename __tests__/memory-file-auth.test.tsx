@@ -44,9 +44,9 @@ async function openFile() {
 
 async function editAndSave() {
   await openFile();
-  await act(async () => fireEvent.press(screen.getByLabelText('Edit')));
-  await act(async () => fireEvent.changeText(screen.getByLabelText('User profile content'), 'new'));
-  await act(async () => fireEvent.press(screen.getByLabelText('Save')));
+  await act(async () => fireEvent.press(screen.getByLabelText('编辑')));
+  await act(async () => fireEvent.changeText(screen.getByLabelText('用户档案内容'), 'new'));
+  await act(async () => fireEvent.press(screen.getByLabelText('保存')));
 }
 
 test('Save with unsaved edits and an expired session goes straight to sign-in', async () => {
@@ -63,9 +63,9 @@ test('any other Save failure keeps the edits, and back still asks first', async 
     .mockRejectedValue(new HttpError(500, 'boom'));
   await editAndSave();
   expect(pathname()).toBe('/memory-file');
-  expect(screen.getByLabelText('User profile content').props.value).toBe('new');
+  expect(screen.getByLabelText('用户档案内容').props.value).toBe('new');
 
   await act(async () => router.back());
-  expect(alertSpy).toHaveBeenCalledWith('Discard changes?', expect.any(String), expect.any(Array));
+  expect(alertSpy).toHaveBeenCalledWith('放弃修改？', expect.any(String), expect.any(Array));
   expect(pathname()).toBe('/memory-file');
 });

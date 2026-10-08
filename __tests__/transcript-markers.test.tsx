@@ -8,19 +8,19 @@ jest.mock('expo-haptics', () => ({ impactAsync: jest.fn(async () => {}), ImpactF
 
 test('a steered user message shows a "Steered" caption and says so to VoiceOver', async () => {
   await render(<MessageRow item={{ key: 'i1', role: 'user', text: 'use tabs', complete: true, steered: true }} />);
-  expect(screen.getByText('Steered')).toBeOnTheScreen();
-  expect(screen.getByLabelText('You steered: use tabs')).toBeOnTheScreen();
+  expect(screen.getByText('已引导')).toBeOnTheScreen();
+  expect(screen.getByLabelText('你的引导：use tabs')).toBeOnTheScreen();
 });
 
 test('a plain user message has no Steered caption', async () => {
   await render(<MessageRow item={{ key: 'i1', role: 'user', text: 'hi', complete: true }} />);
-  expect(screen.queryByText('Steered')).toBeNull();
+  expect(screen.queryByText('已引导')).toBeNull();
 });
 
 test('the stopped marker renders as "Stopped" with an accessible label', async () => {
-  await render(<MessageRow item={{ key: 'i2', role: 'status', text: 'Stopped', marker: 'stopped' }} />);
-  expect(screen.getByLabelText('Response stopped')).toBeOnTheScreen();
-  expect(screen.getByText('Stopped')).toBeOnTheScreen();
+  await render(<MessageRow item={{ key: 'i2', role: 'status', text: '已停止', marker: 'stopped' }} />);
+  expect(screen.getByLabelText('回复已停止')).toBeOnTheScreen();
+  expect(screen.getByText('已停止')).toBeOnTheScreen();
 });
 
 describe('tool row outcome', () => {
@@ -41,11 +41,11 @@ describe('tool row outcome', () => {
   }
 
   test.each([
-    [undefined, 'Tool terminal, finished', 'checkmark.circle.fill', 'success'],
-    ['ok', 'Tool terminal, finished', 'checkmark.circle.fill', 'success'],
-    ['failed', 'Tool terminal, failed', 'xmark.circle.fill', 'danger'],
-    ['denied', 'Tool terminal, denied', 'hand.raised.fill', 'textDim'],
-    ['interrupted', 'Tool terminal, interrupted', 'stop.circle.fill', 'textDim'],
+    [undefined, '工具 terminal，已完成', 'checkmark.circle.fill', 'success'],
+    ['ok', '工具 terminal，已完成', 'checkmark.circle.fill', 'success'],
+    ['failed', '工具 terminal，失败', 'xmark.circle.fill', 'danger'],
+    ['denied', '工具 terminal，已拒绝', 'hand.raised.fill', 'textDim'],
+    ['interrupted', '工具 terminal，已中断', 'stop.circle.fill', 'textDim'],
   ] as const)('outcome %s → "%s", %s in %s', async (outcome, label, sf, token) => {
     const colors = await themeColors();
     mockIcon.mockClear();
@@ -59,7 +59,7 @@ describe('tool row outcome', () => {
     const item = tool('denied');
     const summary = 'No answer within 60s — the command did not run.';
     await render(<MessageRow item={{ ...item, tool: { ...item.tool, summary } }} />);
-    expect(screen.getByLabelText(`Tool terminal, denied, ${summary}`)).toBeOnTheScreen();
+    expect(screen.getByLabelText(`工具 terminal，已拒绝, ${summary}`)).toBeOnTheScreen();
   });
 
   test("a summary's closing period does not run into the details hint", async () => {
@@ -67,12 +67,12 @@ describe('tool row outcome', () => {
     const summary = 'You denied this command — it did not run.';
     await render(<MessageRow item={{ ...item, tool: { ...item.tool, summary, detail: 'BLOCKED' } }} />);
     expect(
-      screen.getByLabelText('Tool terminal, denied, You denied this command — it did not run, tap for details'),
+      screen.getByLabelText('工具 terminal，已拒绝, You denied this command — it did not run，查看详情'),
     ).toBeOnTheScreen();
   });
 
   test('a running tool still says running', async () => {
     await render(<MessageRow item={{ ...tool(), tool: { id: 't1', name: 'terminal', running: true } }} />);
-    expect(screen.getByLabelText('Tool terminal, running')).toBeOnTheScreen();
+    expect(screen.getByLabelText('工具 terminal，运行中')).toBeOnTheScreen();
   });
 });

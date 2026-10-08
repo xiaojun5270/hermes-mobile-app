@@ -17,9 +17,9 @@ beforeEach(() => {
 
 function makeActions(): SheetAction[] {
   return [
-    { label: 'Text', onPress: jest.fn() },
+    { label: '文本', onPress: jest.fn() },
     { label: 'JSONL', onPress: jest.fn() },
-    { label: 'Delete', destructive: true, onPress: jest.fn() },
+    { label: '删除', destructive: true, onPress: jest.fn() },
   ];
 }
 
@@ -38,15 +38,15 @@ describe('showActionSheetOn ios', () => {
     expect(alertSpy).not.toHaveBeenCalled();
     expect(sheetSpy.mock.calls[0][0]).toEqual({
       title: 'Pick one',
-      options: ['Text', 'JSONL', 'Delete', 'Cancel'],
+      options: ['文本', 'JSONL', '删除', '取消'],
       cancelButtonIndex: 3,
       destructiveButtonIndex: 2,
     });
   });
 
   it('omits destructiveButtonIndex when no action is destructive', () => {
-    showActionSheetOn('ios', 'Export conversation', [
-      { label: 'Text', onPress: jest.fn() },
+    showActionSheetOn('ios', '导出会话', [
+      { label: '文本', onPress: jest.fn() },
       { label: 'JSONL', onPress: jest.fn() },
     ]);
     const [opts] = sheetSpy.mock.calls[0];
@@ -81,7 +81,7 @@ describe('showActionSheetOn android', () => {
     ];
     expect(title).toBe('Pick one');
     expect(message).toBeUndefined();
-    expect(buttons.map((b) => b.text)).toEqual(['Text', 'JSONL', 'Delete', 'Cancel']);
+    expect(buttons.map((b) => b.text)).toEqual(['文本', 'JSONL', '删除', '取消']);
     expect(buttons[0].style).toBeUndefined();
     expect(buttons[2].style).toBe('destructive');
     expect(buttons[3].style).toBe('cancel');

@@ -58,17 +58,24 @@ async function openChat(url: string) {
 
 beforeEach(() => __resetDraftChatStore());
 
-test('New chat on an unstarted draft stays put', async () => {
+test('sidebar navigation and search are simplified Chinese while user titles are unchanged', async () => {
   await openChat('/chat/new');
-  await act(async () => fireEvent.press(screen.getByLabelText('New chat')));
+  expect(screen.getByLabelText('新建会话')).toBeOnTheScreen();
+  expect(screen.getByPlaceholderText('搜索会话')).toBeOnTheScreen();
+  expect(screen.getByLabelText('设置')).toBeOnTheScreen();
+  expect(screen.getByText('Ping test')).toBeOnTheScreen();
+});
+test('新建会话 on an unstarted draft stays put', async () => {
+  await openChat('/chat/new');
+  await act(async () => fireEvent.press(screen.getByLabelText('新建会话')));
   expect(pathname()).toBe('/chat/new');
   expect(mounts).toBe(1);
 });
 
-test('New chat after the draft minted its session opens a fresh chat', async () => {
+test('新建会话 after the draft minted its session opens a fresh chat', async () => {
   await openChat('/chat/new');
   setStartedDraft('s-draft');
-  await act(async () => fireEvent.press(screen.getByLabelText('New chat')));
+  await act(async () => fireEvent.press(screen.getByLabelText('新建会话')));
   expect(pathname()).toBe('/chat/new');
   expect(mounts).toBe(2);
 });

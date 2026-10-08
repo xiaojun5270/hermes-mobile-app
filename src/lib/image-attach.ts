@@ -106,10 +106,10 @@ export interface AttachBytesParams {
  */
 export function buildAttachParams(sessionId: string, img: PickedImage): AttachBytesParams {
   const bytes = base64ByteLength(img.base64);
-  if (bytes === 0) throw new Error('Image is empty — try picking it again.');
+  if (bytes === 0) throw new Error('图片为空，请重新选择。');
   if (bytes > MAX_ATTACH_BYTES) {
     const mb = (bytes / (1024 * 1024)).toFixed(1);
-    throw new Error(`Image is ${mb} MB — the gateway accepts at most 25 MB.`);
+    throw new Error(`图片大小为 ${mb} MB，网关最多接收 25 MB。`);
   }
   const filename = attachFilename(img);
   return {

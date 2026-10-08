@@ -35,9 +35,9 @@ export interface SecureEntryCardProps {
 }
 
 const AUTH_NOTES = {
-  cancelled: 'Cancelled. Nothing was sent.',
-  unavailable: 'Set up Face ID or a device passcode to send this.',
-  failed: "Face ID didn't match. Nothing was sent.",
+  cancelled: '已取消，未发送任何内容。',
+  unavailable: '请先设置 Face ID 或设备密码。',
+  failed: 'Face ID 验证失败，未发送任何内容。',
 } as const;
 
 function SecureEntryForm({
@@ -129,10 +129,10 @@ function SecureEntryForm({
         </Text>
       ) : null}
       <View style={{ flexDirection: 'row', gap: 10 }}>
-        <CardButton label="Skip" a11y="Skip, don't send a value" onPress={skip} disabled={authing} flex />
+        <CardButton label="跳过" a11y="跳过，不发送内容" onPress={skip} disabled={authing} flex />
         <CardButton
-          label={authing ? 'Checking…' : 'Send with Face ID'}
-          a11y="Send with Face ID"
+          label={authing ? '正在验证…' : '验证 Face ID 后发送'}
+          a11y="验证 Face ID 后发送"
           onPress={() => void send()}
           disabled={!value || authing}
           primary
@@ -146,15 +146,15 @@ function SecureEntryForm({
 function settledRow(card: RequestCardState, colors: ThemeColors): { label: string; icon: string; tint: string } {
   switch (card.status) {
     case 'answered':
-      return { label: 'Sent', icon: 'checkmark.circle.fill', tint: colors.success };
+      return { label: '已发送', icon: 'checkmark.circle.fill', tint: colors.success };
     case 'answering':
-      return { label: 'Sending…', icon: 'hourglass', tint: colors.textFaint };
+      return { label: '正在发送…', icon: 'hourglass', tint: colors.textFaint };
     case 'skipped':
-      return { label: 'Skipped', icon: 'slash.circle', tint: colors.textFaint };
+      return { label: '已跳过', icon: 'slash.circle', tint: colors.textFaint };
     case 'cancelled':
-      return { label: card.cancelReason ? cancelLabel(card.cancelReason) : 'Closed', icon: 'slash.circle', tint: colors.textFaint };
+      return { label: card.cancelReason ? cancelLabel(card.cancelReason) : '已关闭', icon: 'slash.circle', tint: colors.textFaint };
     case 'pending': // still pending but past the local deadline
-      return { label: 'Timed out', icon: 'slash.circle', tint: colors.textFaint };
+      return { label: '已超时', icon: 'slash.circle', tint: colors.textFaint };
   }
 }
 
@@ -210,15 +210,15 @@ export function SecureEntryCard({
   // the contract's decline). Never -32601/-32603, which would withdraw the request for every client.
   if (copy === null) {
     return (
-      <View accessibilityLabel="Secret request that can't be shown" style={frame}>
+      <View accessibilityLabel="无法显示的安全输入请求" style={frame}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
           <Icon sf="lock.fill" size={14} color={open ? colors.accent : colors.textFaint} />
-          <Text style={{ color: colors.text, fontSize: 14.5, fontWeight: '700', flexShrink: 1 }}>Hermes asked for a value</Text>
+          <Text style={{ color: colors.text, fontSize: 14.5, fontWeight: '700', flexShrink: 1 }}>Hermes 请求安全输入</Text>
         </View>
-        <Text style={{ color: colors.textDim, fontSize: 14, lineHeight: 20 }}>{"This request can't be shown."}</Text>
+        <Text style={{ color: colors.textDim, fontSize: 14, lineHeight: 20 }}>{'此请求无法显示。'}</Text>
         {open ? (
           <View style={{ flexDirection: 'row' }}>
-            <CardButton label="Skip" a11y="Skip this request" onPress={onSkip} flex />
+            <CardButton label="跳过" a11y="跳过此请求" onPress={onSkip} flex />
           </View>
         ) : (
           outcome
@@ -229,7 +229,7 @@ export function SecureEntryCard({
 
   return (
     <View
-      accessibilityLabel={copy.method === 'sudo' ? 'Administrator password request' : `Secret request: ${copy.title}`}
+      accessibilityLabel={copy.method === 'sudo' ? '管理员密码请求' : `安全输入请求：${copy.title}`}
       style={frame}
     >
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
@@ -250,7 +250,7 @@ export function SecureEntryCard({
       </View>
 
       <View style={{ gap: 4 }}>
-        <Text style={{ color: colors.textFaint, fontSize: 12, fontWeight: '600' }}>Requested by the agent</Text>
+        <Text style={{ color: colors.textFaint, fontSize: 12, fontWeight: '600' }}>由智能体请求</Text>
         {copy.ask ? (
           <Text selectable style={{ color: colors.text, fontSize: 14.5, lineHeight: 20 }}>
             {copy.ask}
@@ -267,7 +267,7 @@ export function SecureEntryCard({
 
       {copy.method === 'secret' ? (
         <Text style={{ color: colors.textDim, fontSize: 13 }}>
-          {`Skill: ${copy.skillName ?? 'unknown'} · source: ${provenance === null ? 'checking…' : provenanceText(provenance)}`}
+          {`技能：${copy.skillName ?? '未知'} · 来源：${provenance === null ? '正在检查…' : provenanceText(provenance)}`}
         </Text>
       ) : null}
 

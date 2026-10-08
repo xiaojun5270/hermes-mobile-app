@@ -8,6 +8,7 @@ import { withAuthRetry } from '@/connection';
 import { showProfilePicker } from '@/lib/profile-picker';
 import { activeProfileLabel, getProfileState, subscribeProfiles } from '@/profile-store';
 import { useTheme } from '@/theme';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export { RouteError as ErrorBoundary } from '@/components/route-error';
 
@@ -79,6 +80,7 @@ function Row({
  * then the chat's knobs (model, profile) and hermes destinations. */
 export default function AttachSheet() {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const profiles = useSyncExternalStore(subscribeProfiles, getProfileState);
   const [modelName, setModelName] = useState<string | null>(null);
 
@@ -116,7 +118,7 @@ export default function AttachSheet() {
       <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingTop: 24, paddingBottom: 4 }}>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Close"
+          accessibilityLabel="关闭"
           hitSlop={8}
           onPress={() => router.back()}
           style={({ pressed }) => ({
@@ -133,16 +135,18 @@ export default function AttachSheet() {
           <Icon sf="xmark" size={13} color={colors.text} />
         </Pressable>
         <Text style={{ flex: 1, textAlign: 'center', color: colors.text, fontSize: 17, fontWeight: '600' }}>
-          Add to chat
+
+          添加到会话
         </Text>
         {/* Spacer balancing the close button so the title stays centered. */}
         <View style={{ width: 34 }} />
       </View>
 
-      <View style={{ padding: 14, gap: 14 }}>
+      <View style={{ padding: 14, paddingBottom: Math.max(14, insets.bottom), gap: 14 }}>
         <View style={{ flexDirection: 'row', gap: 10 }}>
-          <Tile icon="camera.fill" label="Camera" onPress={() => attach('camera')} />
-          <Tile icon="photo.on.rectangle" label="Photos" onPress={() => attach('library')} />
+          <Tile icon="camera.fill" label="拍照" onPress={() => attach('camera')} />
+          <Tile icon="photo.on.rectangle" label="照片" onPress={() => attach('library')} />
+          <Tile icon="doc.fill" label="文件" onPress={() => attach('files')} />
         </View>
 
         <View
@@ -157,13 +161,13 @@ export default function AttachSheet() {
         >
           <Row
             icon="cpu"
-            label="Model"
+            label="模型"
             value={modelName}
             onPress={() => go(() => router.push('/models'))}
           />
           <Row
             icon="person.crop.circle"
-            label="Profile"
+            label="配置档案"
             value={activeProfileLabel(profiles)}
             last
             onPress={profiles.names.length > 1 ? showProfilePicker : () => go(() => router.push('/settings'))}
@@ -182,13 +186,13 @@ export default function AttachSheet() {
         >
           <Row
             icon="calendar.badge.plus"
-            label="Schedule a task"
+            label="创建定时任务"
             onPress={() => go(() => router.push('/cron-edit'))}
           />
-          <Row icon="sparkles" label="Skills" onPress={() => go(() => router.push('/skills'))} />
+          <Row icon="sparkles" label="技能" onPress={() => go(() => router.push('/skills'))} />
           <Row
             icon="books.vertical"
-            label="Memory"
+            label="记忆"
             last
             onPress={() => go(() => router.push('/memory'))}
           />

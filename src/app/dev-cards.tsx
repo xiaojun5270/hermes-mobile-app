@@ -68,18 +68,18 @@ export default function DevCards() {
       style={{ flex: 1, backgroundColor: colors.bg }}
       contentContainerStyle={{ padding: 16, paddingTop: insets.top + 16, paddingBottom: insets.bottom + 40, gap: 24 }}
     >
-      <Section title="Transcript markers">
+      <Section title="会话标记">
         <MessageRow item={{ key: 'd1', role: 'user', text: 'Actually, use tabs.', complete: true, steered: true }} />
-        <MessageRow item={{ key: 'd2', role: 'status', text: 'Stopped', marker: 'stopped' }} />
+        <MessageRow item={{ key: 'd2', role: 'status', text: '已停止', marker: 'stopped' }} />
       </Section>
-      <Section title="Composer">
+      <Section title="消息输入">
         <DevComposer mode={{ kind: 'send', enabled: false }} />
         <DevComposer mode={{ kind: 'stop+steer', stopEnabled: true, steerEnabled: false }} />
         <DevComposer mode={{ kind: 'stop+steer', stopEnabled: true, steerEnabled: true }} initial="Actually, use tabs." />
         <DevComposer mode={{ kind: 'stop+steer', stopEnabled: false, steerEnabled: false }} initial="Actually, use tabs." />
         <DevComposer mode={{ kind: 'stop+steer', stopEnabled: true, steerEnabled: false }} image />
       </Section>
-      <Section title="Approval">
+      <Section title="操作授权">
         <ApprovalCard card={devCard({ id: 'a1', kind: 'approval', method: 'approval', params: devApproval })} actionable onRespond={() => {}} />
         <ApprovalCard card={devCard({ id: 'a2', kind: 'approval', method: 'approval', params: devApproval, legacy: true })} actionable={false} onRespond={() => {}} />
         <ApprovalCard card={devCard({ id: 'a3', kind: 'approval', method: 'approval', params: devApproval, status: 'answered', resolution: 'deny' })} actionable={false} onRespond={() => {}} />
@@ -88,7 +88,7 @@ export default function DevCards() {
         <ApprovalCard card={devCard({ id: 'a7', kind: 'approval', method: 'approval', params: { ...devApproval, choices: ['once', 'deny'] } })} actionable onRespond={() => {}} />
         <ApprovalCard card={devCard({ id: 'a4', kind: 'approval', method: 'approval', params: devApproval, status: 'cancelled', cancelReason: 'interrupted' })} actionable={false} onRespond={() => {}} />
       </Section>
-      <Section title="Clarify">
+      <Section title="问题确认">
         <ClarifyCard
           card={devCard({ id: 'c1', kind: 'clarify', method: 'clarify', params: { session_id: 's', question: 'Tabs or spaces?', choices: ['Tabs (Recommended)', 'Spaces'] } })}
           responder={devClarifyResponder}
@@ -102,7 +102,7 @@ export default function DevCards() {
           responder={devClarifyResponder}
         />
       </Section>
-      <Section title="Secure entry">
+      <Section title="安全输入">
         <SecureEntryCard
           card={devCard({
             id: 's1',
@@ -127,7 +127,7 @@ export default function DevCards() {
           onSkip={() => {}}
         />
       </Section>
-      <Section title="Vault">
+      <Section title="凭据保管">
         <VaultDeclinedNote />
       </Section>
       {/* dev-cards:end */}

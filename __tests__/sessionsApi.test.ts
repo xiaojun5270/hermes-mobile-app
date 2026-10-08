@@ -80,7 +80,7 @@ describe('deleteSession', () => {
   });
 });
 
-describe('setSessionArchived', () => {
+describe('setSession已归档', () => {
   it('PATCHes archived true/false with optional profile', async () => {
     const calls: { path: string; body: unknown }[] = [];
     const client = { patch: async (path: string, body: unknown) => { calls.push({ path, body }); return { ok: true, archived: true }; } };

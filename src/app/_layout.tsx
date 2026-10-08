@@ -58,7 +58,7 @@ export default function Layout() {
             <Stack.Screen
               name="settings"
               options={{
-                title: 'Settings',
+                title: '设置',
                 presentation: 'formSheet',
                 sheetGrabberVisible: true,
                 sheetAllowedDetents: [0.5, 1.0],

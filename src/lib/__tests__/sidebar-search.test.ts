@@ -26,7 +26,7 @@ test('hits for the live query are shown', () => {
   expect(searchView('abc', { q: 'abc', results }, true)).toEqual({ pending: false, results });
 });
 
-test('an empty answer is still an answer (No matches), not a pending search', () => {
+test('an empty answer is still an answer (没有匹配结果), not a pending search', () => {
   expect(searchView('abc', { q: 'abc', results: [] }, true)).toEqual({ pending: false, results: [] });
 });
 

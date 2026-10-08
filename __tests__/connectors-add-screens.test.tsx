@@ -131,7 +131,7 @@ async function open(...urls: string[]) {
 
 const pressAdd = () =>
   act(async () => {
-    await fireEvent.press(screen.getByRole('button', { name: 'Add connector' }));
+    await fireEvent.press(screen.getByRole('button', { name: '添加连接器' }));
   });
 
 beforeEach(() => {
@@ -147,15 +147,15 @@ beforeEach(() => {
 });
 
 describe('Catalog', () => {
-  it('lists the remote entries that need no install, with how each signs in, and the Custom server row', async () => {
+  it('lists the remote entries that need no install, with how each signs in, and the 自定义服务器 row', async () => {
     await open('/connectors', '/connectors/add');
     expect(screen.getByText('asana')).toBeTruthy();
     expect(screen.getByText('docs')).toBeTruthy();
     expect(screen.getByText('linear')).toBeTruthy();
     expect(screen.queryByText('local-thing')).toBeNull();
     expect(screen.queryByText('builder')).toBeNull();
-    expect(screen.getByText('No sign-in needed')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Custom server, add one by URL' })).toBeTruthy();
+    expect(screen.getByText('无需登录')).toBeTruthy();
+    expect(screen.getByRole('button', { name: '自定义服务器，通过地址添加' })).toBeTruthy();
   });
 
   it('an entry opens its page; the Custom row opens the form', async () => {
@@ -168,7 +168,7 @@ describe('Catalog', () => {
     await act(async () => router.back());
     await flush();
     await act(async () => {
-      await fireEvent.press(screen.getByRole('button', { name: 'Custom server, add one by URL' }));
+      await fireEvent.press(screen.getByRole('button', { name: '自定义服务器，通过地址添加' }));
     });
     await flush();
     expect(pathname()).toBe('/connectors/custom');
@@ -178,7 +178,7 @@ describe('Catalog', () => {
     mockCatalog.mockResolvedValue({ entries: [entry({ installed: true })], diagnostics: [] });
     mockList.mockResolvedValue([server()]);
     await open('/connectors', '/connectors/add');
-    expect(screen.getByText('Added')).toBeTruthy();
+    expect(screen.getByText('已添加')).toBeTruthy();
     await act(async () => {
       await fireEvent.press(screen.getByRole('button', { name: /^linear,/ }));
     });
@@ -189,22 +189,22 @@ describe('Catalog', () => {
   it('an empty catalog says so and still offers the Custom row', async () => {
     mockCatalog.mockResolvedValue({ entries: [], diagnostics: [] });
     await open('/connectors', '/connectors/add');
-    expect(screen.getByText('No catalog connectors')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Custom server, add one by URL' })).toBeTruthy();
+    expect(screen.getByText('目录中暂无连接器')).toBeTruthy();
+    expect(screen.getByRole('button', { name: '自定义服务器，通过地址添加' })).toBeTruthy();
   });
 
   it('a catalog that fails to load shows why and still offers the Custom row', async () => {
     mockCatalog.mockRejectedValue(new TypeError('Network request failed'));
     await open('/connectors', '/connectors/add');
-    expect(screen.getByText('Gateway unreachable — check your VPN or Wi-Fi.')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Custom server, add one by URL' })).toBeTruthy();
+    expect(screen.getByText('无法连接网关，请检查 VPN 或 Wi-Fi。')).toBeTruthy();
+    expect(screen.getByRole('button', { name: '自定义服务器，通过地址添加' })).toBeTruthy();
   });
 
   it('a gateway without the catalog route says connectors are not available', async () => {
     mockCatalog.mockRejectedValue(new HttpError(404, 'Not Found'));
     await open('/connectors', '/connectors/add');
-    expect(screen.getByText("This gateway doesn't support connectors (needs Hermes 0.21.5 or later).")).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Custom server, add one by URL' })).toBeNull();
+    expect(screen.getByText('此网关不支持连接器，需要 Hermes 0.21.5 或更新版本。')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: '自定义服务器，通过地址添加' })).toBeNull();
   });
 
   it('a dead session goes to sign-in', async () => {
@@ -219,14 +219,14 @@ describe('Catalog entry', () => {
     await open('/connectors', '/connectors/add', '/connectors/catalog/linear');
     expect(screen.getByText('Issues and projects from Linear.')).toBeTruthy();
     expect(screen.getByText('https://mcp.linear.app/mcp')).toBeTruthy();
-    expect(screen.getByText('OAuth sign-in')).toBeTruthy();
-    expect(screen.getByRole('link', { name: 'About this connector' })).toBeTruthy();
+    expect(screen.getByText('OAuth 登录')).toBeTruthy();
+    expect(screen.getByRole('link', { name: '关于此连接器' })).toBeTruthy();
   });
 
   it('has no About link when the source is not https', async () => {
     mockCatalog.mockResolvedValue({ entries: [entry({ source: 'javascript:alert(1)' })], diagnostics: [] });
     await open('/connectors', '/connectors/add', '/connectors/catalog/linear');
-    expect(screen.queryByRole('link', { name: 'About this connector' })).toBeNull();
+    expect(screen.queryByRole('link', { name: '关于此连接器' })).toBeNull();
   });
 
   it('installing a no-auth entry lands on its detail with the list underneath, without asking for a sign-in', async () => {
@@ -278,18 +278,18 @@ describe('Catalog entry', () => {
     await pressAdd();
     await flush();
     expect(mockInstall).not.toHaveBeenCalled();
-    expect(screen.getByText('Cancelled. Nothing was sent.')).toBeTruthy();
+    expect(screen.getByText('已取消，未发送任何内容。')).toBeTruthy();
   });
 
   it('a failed install shows the reason and, with credentials, that they may already be stored', async () => {
-    mockInstall.mockRejectedValue(new HttpError(400, 'The gateway rejected this connector.'));
+    mockInstall.mockRejectedValue(new HttpError(400, '网关拒绝添加此连接器。'));
     await open('/connectors', '/connectors/add', '/connectors/catalog/asana');
     await fireEvent.changeText(screen.getByLabelText('Asana client ID'), 'client-1');
     await fireEvent.changeText(screen.getByLabelText('Asana client secret'), SECRET);
     await pressAdd();
     await flush(20);
     expect(
-      screen.getByText('The gateway rejected this connector. What you entered may already be stored on the gateway.'),
+      screen.getByText('网关拒绝添加此连接器。 你输入的内容可能已保存到网关。'),
     ).toBeTruthy();
     expect(pathname()).toBe('/connectors/catalog/asana');
     expect(mockCatalog.mock.calls.length).toBeGreaterThan(2); // it looked again before letting him retry
@@ -324,7 +324,7 @@ describe('Catalog entry', () => {
     const looks = mockCatalog.mock.calls.length;
     await pressAdd();
     await flush(20);
-    expect(screen.getByText('The gateway did not answer in time.')).toBeTruthy();
+    expect(screen.getByText('网关响应超时。')).toBeTruthy();
     expect(mockCatalog.mock.calls.length).toBe(looks);
   });
 
@@ -337,8 +337,8 @@ describe('Catalog entry', () => {
     await pressAdd();
     await flush(20);
     expect(pathname()).toBe('/connectors/catalog/linear');
-    expect(screen.getByText('Already added')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Open connector' })).toBeTruthy();
+    expect(screen.getByText('已添加')).toBeTruthy();
+    expect(screen.getByRole('button', { name: '打开连接器' })).toBeTruthy();
     expect(mockRequestSignIn).not.toHaveBeenCalled();
     expect(getMcpChangePending()).toBe(false);
   });
@@ -348,7 +348,7 @@ describe('Catalog entry', () => {
     mockInstall.mockImplementation(() => new Promise((resolve) => (finish = resolve)));
     await open('/connectors', '/connectors/add', '/connectors/catalog/docs');
     await act(async () => {
-      void fireEvent.press(screen.getByRole('button', { name: 'Add connector' }));
+      void fireEvent.press(screen.getByRole('button', { name: '添加连接器' }));
     });
     await flush();
     await act(async () => router.dismissTo('/' as never));
@@ -369,13 +369,13 @@ describe('Catalog entry', () => {
 
   it('an unknown entry says so', async () => {
     await open('/connectors', '/connectors/add', '/connectors/catalog/nope');
-    expect(screen.getByText('Not in the catalog')).toBeTruthy();
+    expect(screen.getByText('目录中未找到')).toBeTruthy();
   });
 });
 
-describe('Custom server', () => {
-  const url = () => screen.getByLabelText('Server URL');
-  const name = () => screen.getByLabelText('Name');
+describe('自定义服务器', () => {
+  const url = () => screen.getByLabelText('服务器地址');
+  const name = () => screen.getByLabelText('名称');
   const choose = (label: string) =>
     act(async () => {
       await fireEvent.press(screen.getByRole('radio', { name: label }));
@@ -393,17 +393,17 @@ describe('Custom server', () => {
   it('checks the name and URL before sending anything', async () => {
     await open('/connectors', '/connectors/add', '/connectors/custom');
     await pressAdd();
-    expect(screen.getByText('Enter the server URL.')).toBeTruthy();
-    expect(screen.getByText('Enter a name.')).toBeTruthy();
+    expect(screen.getByText('请输入服务器地址。')).toBeTruthy();
+    expect(screen.getByText('请输入名称。')).toBeTruthy();
     await fireEvent.changeText(url(), 'ftp://x.example');
-    expect(screen.getByText('Enter a URL that starts with https://')).toBeTruthy();
+    expect(screen.getByText('请输入以 https:// 开头的地址。')).toBeTruthy();
     expect(mockAdd).not.toHaveBeenCalled();
   });
 
   it('cautions on http as soon as it is typed', async () => {
     await open('/connectors', '/connectors/add', '/connectors/custom');
     await fireEvent.changeText(url(), 'http://10.0.0.5:8000/mcp');
-    expect(screen.getByText('Traffic between your gateway and this server will not be encrypted.')).toBeTruthy();
+    expect(screen.getByText('网关与此服务器之间的通信不会加密。')).toBeTruthy();
   });
 
   it('no auth: adds without Face ID and lands on the detail', async () => {
@@ -428,8 +428,8 @@ describe('Custom server', () => {
     mockAdd.mockResolvedValue(server({ name: 'mine', auth: 'header', url: 'https://x.example/mcp' }));
     await open('/connectors', '/connectors/add', '/connectors/custom');
     await fireEvent.changeText(url(), 'https://x.example/mcp');
-    await choose('Bearer token');
-    await fireEvent.changeText(screen.getByLabelText('Token'), SECRET);
+    await choose('Bearer 令牌');
+    await fireEvent.changeText(screen.getByLabelText('令牌'), SECRET);
     mockList.mockResolvedValue([server({ name: 'x', auth: 'header', url: 'https://x.example/mcp' })]);
     const order: string[] = [];
     mockAuthenticate.mockImplementation(async () => {
@@ -453,22 +453,22 @@ describe('Custom server', () => {
   it('bearer token without a token stops before Face ID', async () => {
     await open('/connectors', '/connectors/add', '/connectors/custom');
     await fireEvent.changeText(url(), 'https://x.example/mcp');
-    await choose('Bearer token');
+    await choose('Bearer 令牌');
     await pressAdd();
-    expect(screen.getByText('Token is required.')).toBeTruthy();
+    expect(screen.getByText('令牌不能为空。')).toBeTruthy();
     expect(mockAuthenticate).not.toHaveBeenCalled();
     expect(mockAdd).not.toHaveBeenCalled();
   });
 
-  it('switching the authentication away from Bearer token drops what was typed', async () => {
+  it('switching the authentication away from Bearer 令牌 drops what was typed', async () => {
     await open('/connectors', '/connectors/add', '/connectors/custom');
     await fireEvent.changeText(url(), 'https://x.example/mcp');
-    await choose('Bearer token');
-    await fireEvent.changeText(screen.getByLabelText('Token'), SECRET);
-    await choose('None');
-    expect(screen.queryByLabelText('Token')).toBeNull();
-    await choose('Bearer token');
-    expect(screen.getByLabelText('Token').props.value).toBe('');
+    await choose('Bearer 令牌');
+    await fireEvent.changeText(screen.getByLabelText('令牌'), SECRET);
+    await choose('无');
+    expect(screen.queryByLabelText('令牌')).toBeNull();
+    await choose('Bearer 令牌');
+    expect(screen.getByLabelText('令牌').props.value).toBe('');
   });
 
   it('OAuth: adds, then asks the detail to start the sign-in', async () => {
@@ -489,7 +489,7 @@ describe('Custom server', () => {
     await open('/connectors', '/connectors/add', '/connectors/custom');
     await fireEvent.changeText(url(), 'https://x.example/mcp');
     await choose('OAuth');
-    expect(screen.getByText('OAuth sign-in needs the gateway on an https:// address.')).toBeTruthy();
+    expect(screen.getByText('OAuth 登录需要网关使用 HTTPS 地址。')).toBeTruthy();
     await pressAdd();
     expect(mockAdd).not.toHaveBeenCalled();
   });
@@ -527,7 +527,7 @@ describe('Custom server', () => {
     await pressAdd();
     await flush(30);
     expect(pathname()).toBe('/connectors/custom');
-    expect(screen.getByText('The gateway did not answer in time. Check the list before trying again.')).toBeTruthy();
+    expect(screen.getByText('网关响应超时。 请先检查列表再重试。')).toBeTruthy();
     expect(mockRequestSignIn).not.toHaveBeenCalled();
   });
 
@@ -537,7 +537,7 @@ describe('Custom server', () => {
     await open('/connectors', '/connectors/add', '/connectors/custom');
     await fireEvent.changeText(url(), 'https://x.example/mcp');
     await act(async () => {
-      void fireEvent.press(screen.getByRole('button', { name: 'Add connector' }));
+      void fireEvent.press(screen.getByRole('button', { name: '添加连接器' }));
     });
     await flush();
     expect(url().props.editable).toBe(false);
@@ -557,11 +557,11 @@ describe('Custom server', () => {
   });
 });
 
-describe('Connectors list — entry points', () => {
+describe('MCP 连接器 list — entry points', () => {
   it('the empty state offers to add a connector', async () => {
     await open('/connectors');
     await act(async () => {
-      await fireEvent.press(screen.getByRole('button', { name: 'Add a connector' }));
+      await fireEvent.press(screen.getByRole('button', { name: '添加第一个连接器' }));
     });
     await flush();
     expect(pathname()).toBe('/connectors/add');
@@ -570,19 +570,19 @@ describe('Connectors list — entry points', () => {
   it('no add entry point on a gateway that does not support connectors', async () => {
     mockList.mockRejectedValue(new HttpError(404, 'Not Found'));
     await open('/connectors');
-    expect(screen.queryByRole('button', { name: 'Add a connector' })).toBeNull();
+    expect(screen.queryByRole('button', { name: '添加连接器' })).toBeNull();
   });
 });
 
 // --- branch review: a late answer must not pull him away from where he went -----------------
 
 describe('A request that answers after he went elsewhere', () => {
-  it('catalog install: a chat opened on top stays; the entry reads Already added when he returns', async () => {
+  it('catalog install: a chat opened on top stays; the entry reads 已添加 when he returns', async () => {
     let finish!: (v: unknown) => void;
     mockInstall.mockImplementation(() => new Promise((resolve) => (finish = resolve)));
     await open('/connectors', '/connectors/add', '/connectors/catalog/linear');
     await act(async () => {
-      void fireEvent.press(screen.getByRole('button', { name: 'Add connector' }));
+      void fireEvent.press(screen.getByRole('button', { name: '添加连接器' }));
     });
     await flush();
     await act(async () => router.navigate('/chat/abc' as never)); // e.g. a notification tap
@@ -599,19 +599,19 @@ describe('A request that answers after he went elsewhere', () => {
     await act(async () => router.back());
     await flush();
     expect(pathname()).toBe('/connectors/catalog/linear');
-    expect(screen.getByText('Already added')).toBeTruthy();
+    expect(screen.getByText('已添加')).toBeTruthy();
   });
 
   it('custom add: a chat opened on top stays; the form says it was added', async () => {
     let finish!: (v: McpServer) => void;
     mockAdd.mockImplementation(() => new Promise((resolve) => (finish = resolve)));
     await open('/connectors', '/connectors/add', '/connectors/custom');
-    await fireEvent.changeText(screen.getByLabelText('Server URL'), 'https://x.example/mcp');
+    await fireEvent.changeText(screen.getByLabelText('服务器地址'), 'https://x.example/mcp');
     await act(async () => {
       await fireEvent.press(screen.getByRole('radio', { name: 'OAuth' }));
     });
     await act(async () => {
-      void fireEvent.press(screen.getByRole('button', { name: 'Add connector' }));
+      void fireEvent.press(screen.getByRole('button', { name: '添加连接器' }));
     });
     await flush();
     await act(async () => router.navigate('/chat/abc' as never));
@@ -623,16 +623,16 @@ describe('A request that answers after he went elsewhere', () => {
     expect(getMcpChangePending()).toBe(true);
     await act(async () => router.back());
     await flush();
-    expect(screen.getByText('Added. Open it from the Connectors list.')).toBeTruthy();
+    expect(screen.getByText('已添加，可从连接器列表打开。')).toBeTruthy();
   });
 
   it('custom add: leaving the form altogether — its late success does not navigate', async () => {
     let finish!: (v: McpServer) => void;
     mockAdd.mockImplementation(() => new Promise((resolve) => (finish = resolve)));
     await open('/connectors', '/connectors/add', '/connectors/custom');
-    await fireEvent.changeText(screen.getByLabelText('Server URL'), 'https://x.example/mcp');
+    await fireEvent.changeText(screen.getByLabelText('服务器地址'), 'https://x.example/mcp');
     await act(async () => {
-      void fireEvent.press(screen.getByRole('button', { name: 'Add connector' }));
+      void fireEvent.press(screen.getByRole('button', { name: '添加连接器' }));
     });
     await flush();
     await act(async () => router.dismissTo('/' as never));
@@ -650,13 +650,13 @@ describe('Branch review: smaller cases', () => {
     await open('/connectors', '/connectors/add', '/connectors/catalog/linear');
     await pressAdd();
     await flush(20);
-    expect(screen.getByText('This connector is already added.')).toBeTruthy();
+    expect(screen.getByText('此连接器已添加。')).toBeTruthy();
   });
 
   it('a catalog OAuth entry is not added when the gateway is not on https; the entry says why', async () => {
     mockBaseUrl = 'http://100.89.28.11:9119';
     await open('/connectors', '/connectors/add', '/connectors/catalog/linear');
-    expect(screen.getByText('OAuth sign-in needs the gateway on an https:// address.')).toBeTruthy();
+    expect(screen.getByText('OAuth 登录需要网关使用 HTTPS 地址。')).toBeTruthy();
     await pressAdd();
     await flush();
     expect(mockInstall).not.toHaveBeenCalled();
@@ -687,11 +687,11 @@ describe('Branch review: smaller cases', () => {
   it('after a failed add the token is on screen exactly once: in its own field', async () => {
     mockAdd.mockRejectedValue(new HttpError(409, "Server 'x' already exists"));
     await open('/connectors', '/connectors/add', '/connectors/custom');
-    await fireEvent.changeText(screen.getByLabelText('Server URL'), 'https://x.example/mcp');
+    await fireEvent.changeText(screen.getByLabelText('服务器地址'), 'https://x.example/mcp');
     await act(async () => {
-      await fireEvent.press(screen.getByRole('radio', { name: 'Bearer token' }));
+      await fireEvent.press(screen.getByRole('radio', { name: 'Bearer 令牌' }));
     });
-    await fireEvent.changeText(screen.getByLabelText('Token'), SECRET);
+    await fireEvent.changeText(screen.getByLabelText('令牌'), SECRET);
     await pressAdd();
     await flush(20);
     expect(screen.getByText("Server 'x' already exists")).toBeTruthy();
@@ -702,17 +702,17 @@ describe('Branch review: smaller cases', () => {
 
   it('the authentication choices are radios that report which one is checked', async () => {
     await open('/connectors', '/connectors/add', '/connectors/custom');
-    expect(screen.getByRole('radio', { name: 'None' }).props.accessibilityState.checked).toBe(true);
+    expect(screen.getByRole('radio', { name: '无' }).props.accessibilityState.checked).toBe(true);
     await act(async () => {
       await fireEvent.press(screen.getByRole('radio', { name: 'OAuth' }));
     });
     expect(screen.getByRole('radio', { name: 'OAuth' }).props.accessibilityState.checked).toBe(true);
-    expect(screen.getByRole('radio', { name: 'None' }).props.accessibilityState.checked).toBe(false);
+    expect(screen.getByRole('radio', { name: '无' }).props.accessibilityState.checked).toBe(false);
   });
 
   it('a URL that carries a key or credentials gets a caution', async () => {
     await open('/connectors', '/connectors/add', '/connectors/custom');
-    await fireEvent.changeText(screen.getByLabelText('Server URL'), 'https://x.example/mcp?api_key=abc');
-    expect(screen.getByText(/This URL carries a key or credentials/)).toBeTruthy();
+    await fireEvent.changeText(screen.getByLabelText('服务器地址'), 'https://x.example/mcp?api_key=abc');
+    expect(screen.getByText(/此地址包含密钥或凭据/)).toBeTruthy();
   });
 });

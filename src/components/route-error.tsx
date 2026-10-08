@@ -6,13 +6,13 @@ export function RouteError({ error, retry }: { error: Error; retry: () => Promis
   const { colors } = useTheme();
   return (
     <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 28, gap: 14, backgroundColor: colors.bg }}>
-      <Text style={{ color: colors.text, fontSize: 19, fontWeight: '700' }}>Something went wrong</Text>
+      <Text style={{ color: colors.text, fontSize: 19, fontWeight: '700' }}>出现问题</Text>
       <Text selectable style={{ color: colors.textDim, fontSize: 14, textAlign: 'center' }}>
         {error.message}
       </Text>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel="Try again"
+        accessibilityLabel="重试"
         onPress={retry}
         style={({ pressed }) => ({
           backgroundColor: pressed ? colors.accentPressed : colors.accent,
@@ -21,7 +21,7 @@ export function RouteError({ error, retry }: { error: Error; retry: () => Promis
           paddingVertical: 12,
         })}
       >
-        <Text style={{ color: colors.onAccent, fontSize: 15.5, fontWeight: '600' }}>Try again</Text>
+        <Text style={{ color: colors.onAccent, fontSize: 15.5, fontWeight: '600' }}>重试</Text>
       </Pressable>
     </View>
   );

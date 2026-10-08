@@ -222,10 +222,10 @@ export default function ConnectorDetailScreen() {
             phase: 'done',
             outcome: { kind: 'ok', tools: outcome.tools, prompts: 0, resources: 0, tokensPresent: true },
           });
-          setSignInNote({ tone: 'info', text: 'Signed in.' });
+          setSignInNote({ tone: 'info', text: '已登录。' });
           markMcpChanged(); // the running gateway reconnects it only if it was already loaded
         } else if (outcome.kind === 'cancelled') {
-          setSignInNote({ tone: 'info', text: 'Sign-in cancelled.' });
+          setSignInNote({ tone: 'info', text: '已取消登录。' });
           void runTest(); // a sign-in that did complete on the gateway still shows
         } else {
           setSignInNote({ tone: 'error', ...signInProblem(outcome.message, gatewayBaseUrl(), name) });
@@ -313,8 +313,8 @@ export default function ConnectorDetailScreen() {
   function confirmRemove(current: McpServer) {
     const { title, message } = removeConfirmation(current.name);
     Alert.alert(title, message, [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Remove', style: 'destructive', onPress: () => void remove(current) },
+      { text: '取消', style: 'cancel' },
+      { text: '移除', style: 'destructive', onPress: () => void remove(current) },
     ]);
   }
 
@@ -337,7 +337,7 @@ export default function ConnectorDetailScreen() {
       contentContainerStyle={{ padding: 20, gap: 12, paddingBottom: 40 }}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={colors.textDim} />}
     >
-      <Stack.Screen options={{ title: typeof name === 'string' ? name : 'Connector' }} />
+      <Stack.Screen options={{ title: typeof name === 'string' ? name : '连接器' }} />
 
       {error ? (
         <Text selectable style={{ color: colors.danger, fontSize: 14 }}>
@@ -346,7 +346,7 @@ export default function ConnectorDetailScreen() {
       ) : null}
 
       {!loaded ? (
-        <Text style={{ color: colors.textFaint, fontSize: 14, textAlign: 'center', paddingTop: 48 }}>Loading…</Text>
+        <Text style={{ color: colors.textFaint, fontSize: 14, textAlign: 'center', paddingTop: 48 }}>正在加载…</Text>
       ) : server && caps ? (
         <>
           <Card>
@@ -355,12 +355,12 @@ export default function ConnectorDetailScreen() {
                 <View
                   style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 16, padding: 16, minHeight: 44 }}
                 >
-                  <Text style={{ color: colors.text, fontSize: 15.5 }}>Enabled</Text>
+                  <Text style={{ color: colors.text, fontSize: 15.5 }}>已启用</Text>
                   <Switch
                     value={server.enabled}
                     disabled={busy || signingIn || removing}
                     onValueChange={() => toggle(server)}
-                    accessibilityLabel="Enabled"
+                    accessibilityLabel="已启用"
                     trackColor={{ true: colors.accent }}
                     hitSlop={8}
                   />
@@ -369,22 +369,22 @@ export default function ConnectorDetailScreen() {
               </>
             ) : null}
             {server.url ? (
-              <Field label="Address" value={server.url} selectable />
+              <Field label="地址" value={server.url} selectable />
             ) : (
-              <Field label="Command" value={[server.command ?? '', ...server.args].join(' ').trim() || 'Unknown'} selectable />
+              <Field label="命令" value={[server.command ?? '', ...server.args].join(' ').trim() || '未知'} selectable />
             )}
             <Separator />
-            <Field label="Authentication" value={authLabel(server) ?? 'None'} />
+            <Field label="身份验证" value={authLabel(server) ?? '无'} />
             {status ? (
               <>
                 <Separator />
-                <Field label="Status" value={status} />
+                <Field label="状态" value={status} />
               </>
             ) : null}
             {server.plugin ? (
               <>
                 <Separator />
-                <Field label="Provided by" value={`Plugin: ${server.plugin}`} />
+                <Field label="提供方" value={`插件：${server.plugin}`} />
               </>
             ) : null}
           </Card>
@@ -414,7 +414,7 @@ export default function ConnectorDetailScreen() {
           {caps.canRemove ? (
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Remove connector"
+              accessibilityLabel="移除连接器"
               accessibilityState={{ disabled: busy || signingIn || removing }}
               disabled={busy || signingIn || removing}
               onPress={() => confirmRemove(server)}
@@ -431,28 +431,29 @@ export default function ConnectorDetailScreen() {
               })}
             >
               <Text style={{ color: colors.danger, fontSize: 15, fontWeight: '600' }}>
-                {removing ? 'Removing…' : 'Remove connector'}
+                {removing ? '正在移除…' : '移除连接器'}
               </Text>
             </Pressable>
           ) : null}
 
           <Text style={{ color: colors.textFaint, fontSize: 12.5, marginHorizontal: 4 }}>
             {!caps.manageable
-              ? 'This connector can’t be changed from the app: its name contains “/”. '
+              ? '连接器名称包含“/”，无法在应用中修改。 '
               : server.source === 'plugin'
-                ? 'This connector comes from a plugin, so it is changed in that plugin’s settings. '
+                ? '此连接器由插件提供，请在插件设置中修改。 '
                 : server.transport === 'stdio'
-                  ? 'Local connectors run on the gateway. They can be switched and tested here; edit them on the gateway. '
+                  ? '本地连接器在网关运行，可以在这里启停和测试，编辑需在网关进行。 '
                   : ''}
-            The agent uses changes after a reload (on the Connectors list) or a gateway restart.
+
+            重新加载连接器或重启网关后，智能体才会使用修改后的配置。
           </Text>
         </>
       ) : !error ? (
         <View style={{ alignItems: 'center', gap: 14, paddingTop: 96, paddingHorizontal: 32 }}>
           <Icon sf="questionmark.circle" size={44} color={colors.textFaint} />
-          <Text style={{ color: colors.text, fontSize: 18, fontWeight: '600' }}>Connector not found</Text>
+          <Text style={{ color: colors.text, fontSize: 18, fontWeight: '600' }}>未找到连接器</Text>
           <Text style={{ color: colors.textDim, fontSize: 14, textAlign: 'center' }}>
-            “{name}” is no longer configured on the gateway. Pull to refresh.
+            “{name}”已从网关配置中移除，请下拉刷新。
           </Text>
         </View>
       ) : null}

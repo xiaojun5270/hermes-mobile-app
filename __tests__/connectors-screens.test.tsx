@@ -150,12 +150,12 @@ beforeEach(() => {
   mockList.mockImplementation(async () => [server(), local]);
 });
 
-describe('Connectors list', () => {
+describe('MCP 连接器 list', () => {
   it('shows the status line when a chat socket is connected, and does not refetch in a loop', async () => {
     publishSessionMcpTarget(owner, target(true));
     await open('/connectors');
-    expect(screen.getByText('Connected · 3 tools')).toBeTruthy();
-    expect(screen.getByText('The agent uses changes after a reload or a gateway restart.')).toBeTruthy();
+    expect(screen.getByText('已连接 · 3 个工具')).toBeTruthy();
+    expect(screen.getByText('重新加载或重启网关后，智能体才会使用修改后的配置。')).toBeTruthy();
     const before = mockList.mock.calls.length;
     await flush(50);
     expect(mockList.mock.calls.length).toBe(before);
@@ -171,7 +171,7 @@ describe('Connectors list', () => {
 
     await act(async () => publishSessionMcpTarget(owner, target(true)));
     await flush();
-    expect(screen.getByText('Connected · 3 tools')).toBeTruthy();
+    expect(screen.getByText('已连接 · 3 个工具')).toBeTruthy();
     expect(mockList.mock.calls.length).toBe(1); // the status arriving does not refetch the list
 
     await act(async () => publishSessionMcpTarget(owner, target(false))); // the chat is reconnecting
@@ -191,7 +191,7 @@ describe('Connectors list', () => {
     await act(async () => fireEvent(screen.getAllByRole('switch')[0], 'valueChange', false));
     await flush(30);
     expect(mockSet).toHaveBeenCalledWith({}, 'linear', false, null);
-    expect(screen.getByText('This connector no longer exists.')).toBeTruthy();
+    expect(screen.getByText('此连接器已不存在。')).toBeTruthy();
     expect(screen.queryByText('linear')).toBeNull();
     expect(screen.getByText('yt')).toBeTruthy();
   });
@@ -202,7 +202,7 @@ describe('Connectors list', () => {
     await act(async () => fireEvent(screen.getAllByRole('switch')[0], 'valueChange', false));
     await flush(30);
     expect(screen.getAllByRole('switch')[0].props.value).toBe(true);
-    expect(screen.getByText('Gateway unreachable — check your VPN or Wi-Fi.')).toBeTruthy();
+    expect(screen.getByText('无法连接网关，请检查 VPN 或 Wi-Fi。')).toBeTruthy();
     expect(mockList.mock.calls.length).toBe(2);
   });
 
@@ -218,15 +218,15 @@ describe('Connectors list', () => {
   it('a gateway without the connector routes gets its own empty state', async () => {
     mockList.mockRejectedValue(new HttpError(404, 'Not Found'));
     await open('/connectors');
-    expect(screen.getByText('Connectors aren’t available')).toBeTruthy();
-    expect(screen.getByText("This gateway doesn't support connectors (needs Hermes 0.21.5 or later).")).toBeTruthy();
+    expect(screen.getByText('连接器不可用')).toBeTruthy();
+    expect(screen.getByText('此网关不支持连接器，需要 Hermes 0.21.5 或更新版本。')).toBeTruthy();
   });
 
   it('no connectors: the empty state', async () => {
     mockList.mockImplementation(async () => []);
     await open('/connectors');
-    expect(screen.getByText('No connectors yet')).toBeTruthy();
-    expect(screen.queryByText('The agent uses changes after a reload or a gateway restart.')).toBeNull();
+    expect(screen.getByText('暂无连接器')).toBeTruthy();
+    expect(screen.queryByText('重新加载或重启网关后，智能体才会使用修改后的配置。')).toBeNull();
   });
 
   it('a dead session goes to sign-in', async () => {
@@ -237,19 +237,19 @@ describe('Connectors list', () => {
 
   it('pressing a row opens its detail', async () => {
     await open('/connectors');
-    await act(async () => fireEvent.press(screen.getByRole('button', { name: /^yt connector/ })));
+    await act(async () => fireEvent.press(screen.getByRole('button', { name: /^yt 连接器/ })));
     await flush();
     expect(pathname()).toBe('/connectors/server/yt');
   });
 });
 
-describe('Connector detail', () => {
+describe('连接器 detail', () => {
   it('tests a remote connector once when it opens, and not again across a reconnect', async () => {
     publishSessionMcpTarget(owner, target(true));
     await open('/connectors/server/linear');
     expect(testCalls).toHaveLength(1);
-    expect(screen.getByText('Testing…')).toBeTruthy();
-    expect(screen.getByText('Connected · 3 tools')).toBeTruthy(); // the Status field
+    expect(screen.getByText('正在测试…')).toBeTruthy();
+    expect(screen.getByText('已连接 · 3 个工具')).toBeTruthy(); // the Status field
 
     await act(async () => publishSessionMcpTarget(owner, target(false)));
     await flush();
@@ -262,16 +262,16 @@ describe('Connector detail', () => {
       testCalls[0].resolve({ kind: 'ok', tools: [{ name: 'search', description: 'Search issues' }], prompts: 0, resources: 0, tokensPresent: true }),
     );
     await flush();
-    expect(screen.getByText('Working · 1 tool')).toBeTruthy();
+    expect(screen.getByText('连接正常 · 1 个工具')).toBeTruthy();
     expect(screen.getByText('search')).toBeTruthy();
   });
 
   it('without a chat socket Test is disabled with the reason; it runs when the socket arrives', async () => {
     await open('/connectors/server/linear');
     expect(testCalls).toHaveLength(0);
-    expect(screen.getByRole('button', { name: 'Test connection' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: '测试连接' })).toBeDisabled();
     expect(
-      screen.getByText('Testing needs a connected chat. Go back to the chat, wait for it to connect, then return.'),
+      screen.getByText('请先返回会话并等待连接成功，再回来测试。'),
     ).toBeTruthy();
     await act(async () => publishSessionMcpTarget(owner, target(true)));
     await flush();
@@ -286,16 +286,16 @@ describe('Connector detail', () => {
     expect(screen.getByText('uvx')).toBeTruthy();
 
     await act(async () => {
-      await fireEvent.press(screen.getByRole('button', { name: 'Test connection' }));
+      await fireEvent.press(screen.getByRole('button', { name: '测试连接' }));
     });
     await flush();
     expect(testCalls).toHaveLength(1);
-    expect(screen.getByRole('button', { name: 'Test connection' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: '测试连接' })).toBeDisabled();
 
     await act(async () => testCalls[0].resolve({ kind: 'ok', tools: [], prompts: 0, resources: 0, tokensPresent: null }));
     await flush();
-    expect(screen.getByText('Working · 0 tools')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Test connection' })).not.toBeDisabled();
+    expect(screen.getByText('连接正常 · 0 个工具')).toBeTruthy();
+    expect(screen.getByRole('button', { name: '测试连接' })).not.toBeDisabled();
   });
 
   it('a switch that fails with 404 says so and re-reads; the connector is then gone', async () => {
@@ -304,7 +304,7 @@ describe('Connector detail', () => {
     mockList.mockImplementation(async () => [local]);
     await act(async () => fireEvent(screen.getByRole('switch'), 'valueChange', false));
     await flush(30);
-    expect(screen.getByText('This connector no longer exists.')).toBeTruthy();
+    expect(screen.getByText('此连接器已不存在。')).toBeTruthy();
     expect(screen.queryByRole('switch')).toBeNull();
   });
 
@@ -314,21 +314,21 @@ describe('Connector detail', () => {
     mockList.mockImplementation(async () => [server({ enabled: false }), local]); // the write had landed
     await act(async () => fireEvent(screen.getByRole('switch'), 'valueChange', false));
     await flush(30);
-    expect(screen.getByText('The gateway did not answer in time.')).toBeTruthy();
+    expect(screen.getByText('网关响应超时。')).toBeTruthy();
     expect(screen.getByRole('switch').props.value).toBe(false);
   });
 
-  it('an unknown name shows Connector not found', async () => {
+  it('an unknown name shows 未找到连接器', async () => {
     await open('/connectors/server/nope');
-    expect(screen.getByText('Connector not found')).toBeTruthy();
+    expect(screen.getByText('未找到连接器')).toBeTruthy();
   });
 
   it('a plugin connector has no switch, and says where to change it', async () => {
     mockList.mockImplementation(async () => [server({ source: 'plugin', plugin: 'acme' })]);
     await open('/connectors/server/linear');
     expect(screen.queryByRole('switch')).toBeNull();
-    expect(screen.getByText('Plugin: acme')).toBeTruthy();
-    expect(screen.getByText(/comes from a plugin/)).toBeTruthy();
+    expect(screen.getByText('插件：acme')).toBeTruthy();
+    expect(screen.getByText(/由插件提供/)).toBeTruthy();
   });
 });
 
@@ -352,7 +352,7 @@ const kick = (fn: () => unknown) =>
     void fn();
   });
 
-describe('Connectors list — spinner and focus', () => {
+describe('MCP 连接器 list — spinner and focus', () => {
   it('spins until the first read settles', async () => {
     const d = deferred<McpServer[]>();
     mockList.mockImplementation(() => d.promise);
@@ -369,7 +369,7 @@ describe('Connectors list — spinner and focus', () => {
     mockSet.mockRejectedValue(new TypeError('Network request failed'));
     await kick(() => fireEvent(firstSwitch(), 'valueChange', false));
     await flush(30);
-    expect(screen.getByText('Gateway unreachable — check your VPN or Wi-Fi.')).toBeTruthy();
+    expect(screen.getByText('无法连接网关，请检查 VPN 或 Wi-Fi。')).toBeTruthy();
     const before = mockList.mock.calls.length;
 
     await act(async () => router.push('/connectors/server/yt' as never));
@@ -380,7 +380,7 @@ describe('Connectors list — spinner and focus', () => {
     await flush();
     expect(mockList.mock.calls.length).toBeGreaterThan(before);
     expect(refreshControl('connectors-list').refreshing).toBe(false); // silent
-    expect(screen.queryByText('Gateway unreachable — check your VPN or Wi-Fi.')).toBeNull();
+    expect(screen.queryByText('无法连接网关，请检查 VPN 或 Wi-Fi。')).toBeNull();
     await act(async () => d.resolve([server({ enabled: false }), local]));
     await flush();
     expect(firstSwitch().props.value).toBe(false); // a change made elsewhere shows on return
@@ -404,7 +404,7 @@ describe('Connectors list — spinner and focus', () => {
     await act(async () => older.reject(new HttpError(0, 'request timed out after 20s')));
     await flush();
     expect(refreshControl('connectors-list').refreshing).toBe(true); // not stopped by the older read
-    expect(screen.queryByText('The gateway did not answer in time.')).toBeNull(); // nor its error shown
+    expect(screen.queryByText('网关响应超时。')).toBeNull(); // nor its error shown
 
     await act(async () => pulled.resolve([server(), local]));
     await flush();
@@ -412,7 +412,7 @@ describe('Connectors list — spinner and focus', () => {
   });
 });
 
-describe('Connectors list — a switch against other requests', () => {
+describe('MCP 连接器 list — a switch against other requests', () => {
   it('a read that was in flight when the switch was flipped cannot put the old value back', async () => {
     await open('/connectors');
     const read = deferred<McpServer[]>();
@@ -458,12 +458,12 @@ describe('Connectors list — a switch against other requests', () => {
     await kick(() => fireEvent(firstSwitch(), 'valueChange', false));
     await flush(30);
     expect(firstSwitch().props.value).toBe(true); // reverted by the screen, not by a re-read
-    expect(screen.getByText('This connector no longer exists.')).toBeTruthy();
-    expect(screen.queryByText('Gateway unreachable — check your VPN or Wi-Fi.')).toBeNull();
+    expect(screen.getByText('此连接器已不存在。')).toBeTruthy();
+    expect(screen.queryByText('无法连接网关，请检查 VPN 或 Wi-Fi。')).toBeNull();
   });
 });
 
-describe('Connector detail — a switch against other requests', () => {
+describe('连接器 detail — a switch against other requests', () => {
   it('a failed switch reverts even when the re-read fails too', async () => {
     await open('/connectors/server/linear');
     mockSet.mockRejectedValue(new HttpError(409, 'Config is locked'));
@@ -496,10 +496,10 @@ describe('Connector detail — a switch against other requests', () => {
 
 // --- Reload now (spec §5.7) -------------------------------------------------------------------
 
-describe('Connectors list — reload', () => {
-  const RELOAD_TITLE = 'Reload connectors?';
-  const banner = () => screen.queryByText('The agent doesn’t have your changes yet.');
-  const reloadButton = () => screen.getByRole('button', { name: 'Reload now' });
+describe('MCP 连接器 list — reload', () => {
+  const RELOAD_TITLE = '重新加载连接器？';
+  const banner = () => screen.queryByText('智能体尚未加载你的修改。');
+  const reloadButton = () => screen.getByRole('button', { name: '立即重新加载' });
 
   /** Press the alert's button with this label (the alert is mocked, so nothing is shown). */
   async function answerAlert(label: string) {
@@ -539,7 +539,7 @@ describe('Connectors list — reload', () => {
   it('also appears, with nothing changed in this app session, when the gateway and the config disagree', async () => {
     publishSessionMcpTarget(owner, target(true, { status: 'configured', tools: 0, connected: false }));
     await open('/connectors');
-    expect(screen.getByText('Not loaded yet · changes after reload')).toBeTruthy();
+    expect(screen.getByText('尚未加载 · 重新加载后生效')).toBeTruthy();
     expect(banner()).toBeTruthy();
   });
 
@@ -553,9 +553,9 @@ describe('Connectors list — reload', () => {
     });
     expect(alertSpy).toHaveBeenCalledTimes(1);
     expect(alertSpy.mock.calls[0][0]).toBe(RELOAD_TITLE);
-    expect(alertSpy.mock.calls[0][1]).toMatch(/every open chat/);
-    expect(alertSpy.mock.calls[0][1]).toMatch(/re-sends the whole conversation/);
-    await answerAlert('Cancel');
+    expect(alertSpy.mock.calls[0][1]).toMatch(/所有打开会话/);
+    expect(alertSpy.mock.calls[0][1]).toMatch(/重新发送完整上下文/);
+    await answerAlert('取消');
     expect(reloads).toBe(0);
     expect(banner()).toBeTruthy();
   });
@@ -569,10 +569,10 @@ describe('Connectors list — reload', () => {
     await act(async () => {
       await fireEvent.press(reloadButton());
     });
-    await answerAlert('Reload');
+    await answerAlert('重新加载');
     expect(reloads).toBe(1);
     expect(banner()).toBeNull();
-    expect(screen.getByText('Reloaded.')).toBeTruthy();
+    expect(screen.getByText('已重新加载。')).toBeTruthy();
     expect(getMcpChangePending()).toBe(false);
     expect(mockList.mock.calls.length).toBe(listBefore + 1);
     expect(statusCalls).toBeGreaterThan(statusBefore);
@@ -586,8 +586,8 @@ describe('Connectors list — reload', () => {
     await act(async () => {
       await fireEvent.press(reloadButton());
     });
-    await answerAlert('Reload');
-    expect(screen.getByText('Reloaded for this chat only.')).toBeTruthy();
+    await answerAlert('重新加载');
+    expect(screen.getByText('已重新加载，仅对此会话生效。')).toBeTruthy();
   });
 
   it('a failed reload keeps the banner and shows the gateway message', async () => {
@@ -598,7 +598,7 @@ describe('Connectors list — reload', () => {
     await act(async () => {
       await fireEvent.press(reloadButton());
     });
-    await answerAlert('Reload');
+    await answerAlert('重新加载');
     expect(banner()).toBeTruthy();
     expect(screen.getByText('compute-host reload_mcp failed: boom')).toBeTruthy();
     expect(getMcpChangePending()).toBe(true);
@@ -612,16 +612,16 @@ describe('Connectors list — reload', () => {
     await act(async () => {
       await fireEvent.press(reloadButton());
     });
-    await answerAlert('Reload');
+    await answerAlert('重新加载');
     expect(banner()).toBeTruthy();
-    expect(screen.getByText('The connection dropped during the reload, so its result is unknown. Check the status lines.')).toBeTruthy();
+    expect(screen.getByText('重新加载时连接中断，结果未确认，请检查连接器状态。')).toBeTruthy();
   });
 
   it('is disabled with the reason when no chat is connected', async () => {
     markMcpChanged();
     await open('/connectors');
     expect(reloadButton()).toBeDisabled();
-    expect(screen.getByText('Reloading needs a connected chat. Go back to the chat, wait for it to connect, then return.')).toBeTruthy();
+    expect(screen.getByText('请先返回会话并等待连接成功，再回来重新加载。')).toBeTruthy();
   });
 
   it('is disabled with the reason while a turn runs in the chat', async () => {
@@ -629,11 +629,11 @@ describe('Connectors list — reload', () => {
     markMcpChanged();
     await open('/connectors');
     expect(reloadButton()).toBeDisabled();
-    expect(screen.getByText('Wait for the chat’s current turn to finish.')).toBeTruthy();
+    expect(screen.getByText('请等待当前任务结束。')).toBeTruthy();
   });
 });
 
-describe('Connector detail — reload', () => {
+describe('连接器 detail — reload', () => {
   it('a successful switch marks a change as pending', async () => {
     await open('/connectors/server/linear');
     mockSet.mockResolvedValue({ ok: true, name: 'linear', enabled: false });
@@ -653,9 +653,9 @@ describe('Connector detail — reload', () => {
 
 // --- Sign in and Remove on the detail (plan 3, task 5) -----------------------------------------
 
-describe('Connector detail — sign in', () => {
-  const signInButton = (label = 'Sign in') => screen.getByRole('button', { name: label });
-  const pressSignIn = (label = 'Sign in') =>
+describe('连接器 detail — sign in', () => {
+  const signInButton = (label = '登录') => screen.getByRole('button', { name: label });
+  const pressSignIn = (label = '登录') =>
     act(async () => {
       void fireEvent.press(signInButton(label));
     });
@@ -669,13 +669,13 @@ describe('Connector detail — sign in', () => {
     expect(screen.queryByRole('button', { name: /^Sign in/ })).toBeNull();
   });
 
-  it('says "Sign in again" only once a test has seen a token', async () => {
+  it('says "重新登录" only once a test has seen a token', async () => {
     publishSessionMcpTarget(owner, target(true));
     await open('/connectors/server/linear');
-    expect(signInButton('Sign in')).toBeTruthy();
+    expect(signInButton('登录')).toBeTruthy();
     await act(async () => testCalls[0].resolve({ kind: 'ok', tools: [], prompts: 0, resources: 0, tokensPresent: true }));
     await flush();
-    expect(signInButton('Sign in again')).toBeTruthy();
+    expect(signInButton('重新登录')).toBeTruthy();
   });
 
   it('approved: shows the tools as a passed test, says Signed in, re-reads the connector and marks a reload as pending', async () => {
@@ -685,9 +685,9 @@ describe('Connector detail — sign in', () => {
     await pressSignIn();
     await flush(20);
     expect(mockSignIn).toHaveBeenCalledWith('linear');
-    expect(screen.getByText('Working · 1 tool')).toBeTruthy();
+    expect(screen.getByText('连接正常 · 1 个工具')).toBeTruthy();
     expect(screen.getByText('search')).toBeTruthy();
-    expect(screen.getByText('Signed in.')).toBeTruthy();
+    expect(screen.getByText('已登录。')).toBeTruthy();
     expect(getMcpChangePending()).toBe(true);
     expect(mockList.mock.calls.length).toBe(reads + 1);
   });
@@ -699,23 +699,23 @@ describe('Connector detail — sign in', () => {
     mockSignIn.mockResolvedValue({ kind: 'approved', tools: [] });
     await pressSignIn();
     await flush(20);
-    expect(screen.getByText('Working · 0 tools')).toBeTruthy();
+    expect(screen.getByText('连接正常 · 0 个工具')).toBeTruthy();
     await act(async () => testCalls[0].resolve({ kind: 'failed', message: 'OLD TEST RESULT', oauthNeeded: true, tokensPresent: false }));
     await flush();
     expect(screen.queryByText('OLD TEST RESULT')).toBeNull();
-    expect(screen.getByText('Working · 0 tools')).toBeTruthy();
+    expect(screen.getByText('连接正常 · 0 个工具')).toBeTruthy();
   });
 
   it('a sign-in that fails while a test was in flight leaves Test usable, and shows why', async () => {
     publishSessionMcpTarget(owner, target(true));
     await open('/connectors/server/linear');
-    expect(screen.getByText('Testing…')).toBeTruthy();
+    expect(screen.getByText('正在测试…')).toBeTruthy();
     mockSignIn.mockResolvedValue({ kind: 'error', message: 'This provider only accepts pre-registered clients.' });
     await pressSignIn();
     await flush(20);
     expect(screen.getByText('This provider only accepts pre-registered clients.')).toBeTruthy();
-    expect(screen.queryByText('Testing…')).toBeNull();
-    expect(screen.getByRole('button', { name: 'Test connection' })).not.toBeDisabled();
+    expect(screen.queryByText('正在测试…')).toBeNull();
+    expect(screen.getByRole('button', { name: '测试连接' })).not.toBeDisabled();
   });
 
   it('cancelled: says so and runs a test, so a sign-in that did complete still shows', async () => {
@@ -726,20 +726,20 @@ describe('Connector detail — sign in', () => {
     mockSignIn.mockResolvedValue({ kind: 'cancelled' });
     await pressSignIn();
     await flush(20);
-    expect(screen.getByText('Sign-in cancelled.')).toBeTruthy();
+    expect(screen.getByText('已取消登录。')).toBeTruthy();
     expect(testCalls).toHaveLength(2);
     expect(getMcpChangePending()).toBe(false);
   });
 
-  it('a connector that is gone: the note, then "Connector not found" after the re-read', async () => {
+  it('a connector that is gone: the note, then "未找到连接器" after the re-read', async () => {
     await open('/connectors/server/linear');
     mockSignIn.mockImplementation(async () => {
       mockList.mockImplementation(async () => [local]);
-      return { kind: 'error', message: 'This connector no longer exists.', gone: true };
+      return { kind: 'error', message: '此连接器已不存在。', gone: true };
     });
     await pressSignIn();
     await flush(30);
-    expect(screen.getByText('Connector not found')).toBeTruthy();
+    expect(screen.getByText('未找到连接器')).toBeTruthy();
   });
 
   it('a dead session during sign-in goes to the sign-in screen', async () => {
@@ -759,10 +759,10 @@ describe('Connector detail — sign in', () => {
     mockSignIn.mockImplementation(() => new Promise((resolve) => (finish = resolve)));
     await pressSignIn();
     await flush();
-    expect(screen.getByText('Waiting for you to finish in the browser…')).toBeTruthy();
+    expect(screen.getByText('等待你在浏览器中完成登录…')).toBeTruthy();
     expect(screen.getByRole('switch').props.disabled).toBe(true);
-    expect(screen.getByRole('button', { name: 'Test connection' })).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'Remove connector' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: '测试连接' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: '移除连接器' })).toBeDisabled();
     await act(async () => finish({ kind: 'cancelled' }));
     await flush(20);
     expect(screen.getByRole('switch').props.disabled).toBe(false);
@@ -792,22 +792,22 @@ describe('Connector detail — sign in', () => {
 
 // Seen on the device (2026-10-01): the provider refused the gateway's redirect address and the
 // screen showed its raw JSON, twice.
-describe('Connector detail — a provider that refuses the gateway’s redirect address', () => {
+describe('连接器 detail — a provider that refuses the gateway’s redirect address', () => {
   const RAW =
     'Registration failed: 400 {"error":"invalid_client_metadata","error_description":"redirect_uri is not allowed by the account configuration"}';
   const EXPLAINED =
-    'The server’s sign-in does not allow this gateway’s redirect address. Add it to the server’s allowed redirect addresses, then sign in again. It said: “redirect_uri is not allowed by the account configuration”';
+    '服务器不允许此网关的回调地址，请将其加入允许列表后重新登录。 返回信息：“redirect_uri is not allowed by the account configuration”';
   const OTHER_RAW = 'Registration failed: 403 {"message":"Dynamic registration is disabled"}';
   const NO_TOKEN = { kind: 'failed' as const, message: 'OAuth authentication required — no token found.', oauthNeeded: true, tokensPresent: false };
   const pressTest = () =>
     act(async () => {
-      void fireEvent.press(screen.getByRole('button', { name: 'Test connection' }));
+      void fireEvent.press(screen.getByRole('button', { name: '测试连接' }));
     });
   const pressSignIn = () =>
     act(async () => {
-      void fireEvent.press(screen.getByRole('button', { name: 'Sign in' }));
+      void fireEvent.press(screen.getByRole('button', { name: '登录' }));
     });
-  const SUMMARY = 'Sign-in is not set up: the server does not allow this gateway’s redirect address.';
+  const SUMMARY = '登录尚未配置，服务器不允许此网关的回调地址。';
   const ADDRESS = 'https://hermes.kite-opah.ts.net/api/mcp/oauth/callback/linear';
 
   beforeEach(() => {
@@ -818,7 +818,7 @@ describe('Connector detail — a provider that refuses the gateway’s redirect 
     await open('/connectors/server/linear');
     mockSignIn.mockResolvedValue({ kind: 'error', message: RAW });
     await act(async () => {
-      void fireEvent.press(screen.getByRole('button', { name: 'Sign in' }));
+      void fireEvent.press(screen.getByRole('button', { name: '登录' }));
     });
     await flush(20);
     expect(screen.getByText(EXPLAINED)).toBeTruthy();
@@ -842,11 +842,11 @@ describe('Connector detail — a provider that refuses the gateway’s redirect 
     await open('/connectors/server/linear');
     mockSignIn.mockResolvedValue({ kind: 'error', message: RAW });
     await act(async () => {
-      void fireEvent.press(screen.getByRole('button', { name: 'Sign in' }));
+      void fireEvent.press(screen.getByRole('button', { name: '登录' }));
     });
     await flush(20);
     await act(async () => {
-      void fireEvent.press(screen.getByRole('button', { name: 'Test connection' }));
+      void fireEvent.press(screen.getByRole('button', { name: '测试连接' }));
     });
     await flush();
     await act(async () => testCalls[testCalls.length - 1].resolve({ kind: 'failed', message: RAW, oauthNeeded: true, tokensPresent: false }));
@@ -872,8 +872,8 @@ describe('Connector detail — a provider that refuses the gateway’s redirect 
     await open('/connectors/server/linear');
     await act(async () => testCalls[0].resolve({ kind: 'failed', message: RAW, oauthNeeded: true, tokensPresent: false }));
     await flush();
-    expect(screen.getByText('Sign-in needs the gateway on an https:// address; providers do not accept a plain-HTTP redirect.')).toBeTruthy();
-    expect(screen.queryByText('Redirect address')).toBeNull();
+    expect(screen.getByText('登录需要网关使用 HTTPS 地址，提供商不接受普通 HTTP 回调。')).toBeTruthy();
+    expect(screen.queryByText('回调地址')).toBeNull();
     expect(screen.queryByText(/Add it to the server/)).toBeNull();
   });
 
@@ -883,11 +883,11 @@ describe('Connector detail — a provider that refuses the gateway’s redirect 
     await act(async () => testCalls[0].resolve({ kind: 'failed', message: OTHER_RAW, oauthNeeded: true, tokensPresent: false }));
     await flush();
     expect(
-      screen.getByText('The server refused to register this gateway for sign-in (HTTP 403). It said: “Dynamic registration is disabled”'),
+      screen.getByText('服务器拒绝注册此网关的登录信息（HTTP 403). 返回信息：“Dynamic registration is disabled”'),
     ).toBeTruthy();
-    expect(screen.getByText('Sign-in is not set up: the server refused to register this gateway (HTTP 403).')).toBeTruthy();
+    expect(screen.getByText('登录尚未配置，服务器拒绝注册此网关（HTTP 403).')).toBeTruthy();
     expect(screen.getAllByText(/Dynamic registration is disabled/)).toHaveLength(1);
-    expect(screen.queryByText('Redirect address')).toBeNull();
+    expect(screen.queryByText('回调地址')).toBeNull();
   });
 
   it('with no sign-in card (from a plugin), the test card carries the provider’s words itself', async () => {
@@ -897,7 +897,7 @@ describe('Connector detail — a provider that refuses the gateway’s redirect 
     await act(async () => testCalls[0].resolve({ kind: 'failed', message: OTHER_RAW, oauthNeeded: true, tokensPresent: false }));
     await flush();
     expect(
-      screen.getByText('Sign-in is not set up: the server refused to register this gateway (HTTP 403). It said: “Dynamic registration is disabled”'),
+      screen.getByText('登录尚未配置，服务器拒绝注册此网关（HTTP 403). 返回信息：“Dynamic registration is disabled”'),
     ).toBeTruthy();
   });
 
@@ -909,13 +909,13 @@ describe('Connector detail — a provider that refuses the gateway’s redirect 
     mockSignIn.mockResolvedValue({ kind: 'cancelled' });
     await pressSignIn();
     await flush(20);
-    expect(screen.getByText('Sign-in cancelled.')).toBeTruthy();
+    expect(screen.getByText('已取消登录。')).toBeTruthy();
     // The cancelled branch runs a test itself; it comes back refused.
     await act(async () => testCalls[testCalls.length - 1].resolve({ kind: 'failed', message: RAW, oauthNeeded: true, tokensPresent: false }));
     await flush();
     expect(screen.getByText(EXPLAINED)).toBeTruthy();
     expect(screen.getByText(ADDRESS)).toBeTruthy();
-    expect(screen.queryByText('Sign-in cancelled.')).toBeNull();
+    expect(screen.queryByText('已取消登录。')).toBeNull();
   });
 
   it('a refused sign-in, then the allow list is fixed and Test says something else: the old explanation goes', async () => {
@@ -942,19 +942,19 @@ describe('Connector detail — a provider that refuses the gateway’s redirect 
     mockSignIn.mockResolvedValue({ kind: 'approved', tools: [] });
     await pressSignIn();
     await flush(20);
-    expect(screen.getByText('Signed in.')).toBeTruthy();
+    expect(screen.getByText('已登录。')).toBeTruthy();
     await act(async () => {
-      void fireEvent.press(screen.getByRole('button', { name: 'Test connection' }));
+      void fireEvent.press(screen.getByRole('button', { name: '测试连接' }));
     });
     await flush();
     await act(async () => testCalls[testCalls.length - 1].resolve({ kind: 'ok', tools: [], prompts: 0, resources: 0, tokensPresent: true }));
     await flush();
-    expect(screen.getByText('Signed in.')).toBeTruthy();
+    expect(screen.getByText('已登录。')).toBeTruthy();
   });
 });
 
-describe('Connector detail — remove', () => {
-  const removeButton = () => screen.getByRole('button', { name: 'Remove connector' });
+describe('连接器 detail — remove', () => {
+  const removeButton = () => screen.getByRole('button', { name: '移除连接器' });
 
   async function pressRemove() {
     await act(async () => {
@@ -982,9 +982,9 @@ describe('Connector detail — remove', () => {
     await openFromList();
     await pressRemove();
     expect(alertSpy).toHaveBeenCalledTimes(1);
-    expect(alertSpy.mock.calls[0][0]).toBe('Remove linear?');
-    expect(alertSpy.mock.calls[0][1]).toMatch(/stay on the gateway/);
-    await answerAlert('Cancel');
+    expect(alertSpy.mock.calls[0][0]).toBe('移除 linear?');
+    expect(alertSpy.mock.calls[0][1]).toMatch(/仍保留在网关/);
+    await answerAlert('取消');
     expect(mockRemove).not.toHaveBeenCalled();
     expect(pathname()).toBe('/connectors/server/linear');
   });
@@ -994,7 +994,7 @@ describe('Connector detail — remove', () => {
     mockRemove.mockResolvedValue({ ok: true });
     mockList.mockImplementation(async () => [local]);
     await pressRemove();
-    await answerAlert('Remove');
+    await answerAlert('移除');
     expect(mockRemove).toHaveBeenCalledWith({}, 'linear', null);
     expect(pathname()).toBe('/connectors');
     expect(getMcpChangePending()).toBe(true);
@@ -1004,7 +1004,7 @@ describe('Connector detail — remove', () => {
     await openFromList();
     mockRemove.mockRejectedValue(new HttpError(404, "Server 'linear' not found"));
     await pressRemove();
-    await answerAlert('Remove');
+    await answerAlert('移除');
     expect(pathname()).toBe('/connectors');
   });
 
@@ -1012,7 +1012,7 @@ describe('Connector detail — remove', () => {
     await openFromList();
     mockRemove.mockRejectedValue(new HttpError(409, "Server 'linear' is provided by plugin 'acme' and cannot be modified"));
     await pressRemove();
-    await answerAlert('Remove');
+    await answerAlert('移除');
     expect(screen.getByText("Server 'linear' is provided by plugin 'acme' and cannot be modified")).toBeTruthy();
     expect(pathname()).toBe('/connectors/server/linear');
     expect(removeButton()).not.toBeDisabled();
@@ -1024,7 +1024,7 @@ describe('Connector detail — remove', () => {
     let finish!: (v: { ok: boolean }) => void;
     mockRemove.mockImplementation(() => new Promise((resolve) => (finish = resolve)));
     await pressRemove();
-    await answerAlert('Remove');
+    await answerAlert('移除');
     await act(async () => router.dismissTo('/' as never));
     await flush();
     expect(pathname()).toBe('/');
@@ -1035,30 +1035,30 @@ describe('Connector detail — remove', () => {
 
   it('a local or plugin connector has no Remove', async () => {
     await open('/connectors/server/yt');
-    expect(screen.queryByRole('button', { name: 'Remove connector' })).toBeNull();
+    expect(screen.queryByRole('button', { name: '移除连接器' })).toBeNull();
   });
 });
 
-describe('Connectors list — the reload note does not outlive the next change', () => {
-  it('"Reloaded." is gone once another change is made', async () => {
+describe('MCP 连接器 list — the reload note does not outlive the next change', () => {
+  it('"已重新加载。" is gone once another change is made', async () => {
     publishSessionMcpTarget(owner, target(true));
     markMcpChanged();
     await open('/connectors');
     await act(async () => {
-      await fireEvent.press(screen.getByRole('button', { name: 'Reload now' }));
+      await fireEvent.press(screen.getByRole('button', { name: '立即重新加载' }));
     });
     const call = alertSpy.mock.calls[alertSpy.mock.calls.length - 1];
     await act(async () => {
-      void (call[2] ?? []).find((b) => b.text === 'Reload')?.onPress?.();
+      void (call[2] ?? []).find((b) => b.text === '重新加载')?.onPress?.();
     });
     await flush(20);
-    expect(screen.getByText('Reloaded.')).toBeTruthy();
+    expect(screen.getByText('已重新加载。')).toBeTruthy();
 
     mockSet.mockResolvedValue({ ok: true, name: 'linear', enabled: false });
     await act(async () => fireEvent(screen.getAllByRole('switch')[0], 'valueChange', false));
     await flush();
-    expect(screen.getByText('The agent doesn’t have your changes yet.')).toBeTruthy();
-    expect(screen.queryByText('Reloaded.')).toBeNull();
+    expect(screen.getByText('智能体尚未加载你的修改。')).toBeTruthy();
+    expect(screen.queryByText('已重新加载。')).toBeNull();
   });
 
   it('and it is gone when the list regains focus', async () => {
@@ -1066,19 +1066,19 @@ describe('Connectors list — the reload note does not outlive the next change',
     markMcpChanged();
     await open('/connectors');
     await act(async () => {
-      await fireEvent.press(screen.getByRole('button', { name: 'Reload now' }));
+      await fireEvent.press(screen.getByRole('button', { name: '立即重新加载' }));
     });
     const call = alertSpy.mock.calls[alertSpy.mock.calls.length - 1];
     await act(async () => {
-      void (call[2] ?? []).find((b) => b.text === 'Reload')?.onPress?.();
+      void (call[2] ?? []).find((b) => b.text === '重新加载')?.onPress?.();
     });
     await flush(20);
-    expect(screen.getByText('Reloaded.')).toBeTruthy();
+    expect(screen.getByText('已重新加载。')).toBeTruthy();
     await act(async () => router.push('/connectors/server/yt' as never));
     await flush();
     await act(async () => router.back());
     await flush();
-    expect(screen.queryByText('Reloaded.')).toBeNull();
+    expect(screen.queryByText('已重新加载。')).toBeNull();
   });
 });
 
@@ -1100,28 +1100,28 @@ describe('Branch review: reload and remove against other things happening', () =
     markMcpChanged();
     await open('/connectors');
     await act(async () => {
-      await fireEvent.press(screen.getByRole('button', { name: 'Reload now' }));
+      await fireEvent.press(screen.getByRole('button', { name: '立即重新加载' }));
     });
-    await confirmLastAlert('Reload');
+    await confirmLastAlert('重新加载');
     await flush();
     markMcpChanged(); // e.g. a connector removed on its detail while the reload was out
     await act(async () => finish({ kind: 'reloaded', thisChatOnly: false }));
     await flush(20);
     expect(getMcpChangePending()).toBe(true);
-    expect(screen.getByText('The agent doesn’t have your changes yet.')).toBeTruthy();
+    expect(screen.getByText('智能体尚未加载你的修改。')).toBeTruthy();
   });
 
-  it('two presses on Reload now ask once and reload once', async () => {
+  it('two presses on 立即重新加载 ask once and reload once', async () => {
     publishSessionMcpTarget(owner, target(true));
     markMcpChanged();
     await open('/connectors');
     await act(async () => {
-      void fireEvent.press(screen.getByRole('button', { name: 'Reload now' }));
-      void fireEvent.press(screen.getByRole('button', { name: 'Reload now' }));
+      void fireEvent.press(screen.getByRole('button', { name: '立即重新加载' }));
+      void fireEvent.press(screen.getByRole('button', { name: '立即重新加载' }));
     });
     await flush();
     expect(alertSpy).toHaveBeenCalledTimes(1);
-    await confirmLastAlert('Reload');
+    await confirmLastAlert('重新加载');
     await flush(20);
     expect(reloads).toBe(1);
   });
@@ -1131,12 +1131,12 @@ describe('Branch review: reload and remove against other things happening', () =
     markMcpChanged();
     await open('/connectors');
     await act(async () => {
-      await fireEvent.press(screen.getByRole('button', { name: 'Reload now' }));
+      await fireEvent.press(screen.getByRole('button', { name: '立即重新加载' }));
     });
-    await confirmLastAlert('Cancel');
+    await confirmLastAlert('取消');
     await flush();
     await act(async () => {
-      await fireEvent.press(screen.getByRole('button', { name: 'Reload now' }));
+      await fireEvent.press(screen.getByRole('button', { name: '立即重新加载' }));
     });
     expect(alertSpy).toHaveBeenCalledTimes(2);
   });
@@ -1148,9 +1148,9 @@ describe('Branch review: reload and remove against other things happening', () =
     let finish!: (v: { ok: boolean }) => void;
     mockRemove.mockImplementation(() => new Promise((resolve) => (finish = resolve)));
     await act(async () => {
-      await fireEvent.press(screen.getByRole('button', { name: 'Remove connector' }));
+      await fireEvent.press(screen.getByRole('button', { name: '移除连接器' }));
     });
-    await confirmLastAlert('Remove');
+    await confirmLastAlert('移除');
     await flush();
     await act(async () => router.navigate('/chat/abc' as never));
     await flush();
@@ -1161,7 +1161,7 @@ describe('Branch review: reload and remove against other things happening', () =
     expect(getMcpChangePending()).toBe(true);
     await act(async () => router.back());
     await flush();
-    expect(screen.getByText('Connector not found')).toBeTruthy();
+    expect(screen.getByText('未找到连接器')).toBeTruthy();
   });
 
   it('a detail that leaves without having used its sign-in request drops it', async () => {

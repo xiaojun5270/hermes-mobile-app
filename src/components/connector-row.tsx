@@ -39,12 +39,12 @@ export function ConnectorRow({
   const badges = connectorBadges(server);
   // The label replaces the pressable's children for VoiceOver, so the badges and the note go into it.
   const a11y = [
-    `${server.name} connector`,
+    `${server.name} 连接器`,
     subtitle,
     ...badges,
     status,
-    server.enabled ? null : 'switched off',
-    caps.manageable ? null : 'cannot be changed from the app',
+    server.enabled ? null : '已停用',
+    caps.manageable ? null : '无法在应用中修改',
   ]
     .filter(Boolean)
     .join(', ');
@@ -67,7 +67,7 @@ export function ConnectorRow({
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={a11y}
-        accessibilityHint="Shows connector details"
+        accessibilityHint="查看连接器详情"
         onPress={() => onPress(server)}
         style={({ pressed }) => ({ flex: 1, gap: 4, minHeight: 44, justifyContent: 'center', opacity: pressed ? 0.55 : 1 })}
       >
@@ -93,13 +93,14 @@ export function ConnectorRow({
           </Text>
         ) : null}
         {status ? (
-          <Text numberOfLines={1} style={{ color: status === 'Failed' ? colors.danger : colors.textDim, fontSize: 13 }}>
+          <Text numberOfLines={1} style={{ color: status === '失败' ? colors.danger : colors.textDim, fontSize: 13 }}>
             {status}
           </Text>
         ) : null}
         {!caps.manageable ? (
           <Text style={{ color: colors.textFaint, fontSize: 12.5 }}>
-            Can’t be changed from the app: its name contains “/”.
+
+            名称包含“/”，无法在应用中修改。
           </Text>
         ) : null}
       </Pressable>
@@ -107,7 +108,7 @@ export function ConnectorRow({
         <Switch
           value={server.enabled}
           onValueChange={() => onToggle(server)}
-          accessibilityLabel={`${server.name} enabled`}
+          accessibilityLabel={`${server.name} ${server.enabled ? '已启用，双击停用' : '已停用，双击启用'}`}
           trackColor={{ true: colors.accent }}
           hitSlop={8}
         />

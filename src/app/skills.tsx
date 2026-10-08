@@ -46,8 +46,8 @@ function SkillRow({
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`${skill.name} skill${skill.category ? `, ${skill.category}` : ''}${skill.enabled ? '' : ', disabled'}`}
-      accessibilityHint="Shows skill details"
+      accessibilityLabel={`${skill.name} 技能${skill.category ? `, ${skill.category}` : ''}${skill.enabled ? '' : '，已停用'}`}
+      accessibilityHint="查看技能详情"
       onPress={() => onPress(skill)}
       style={({ pressed }) => ({
         flexDirection: 'row',
@@ -86,7 +86,7 @@ function SkillRow({
       <Switch
         value={skill.enabled}
         onValueChange={() => onToggle(skill)}
-        accessibilityLabel={`${skill.name} ${skill.enabled ? 'enabled, double tap to disable' : 'disabled, double tap to enable'}`}
+        accessibilityLabel={`${skill.name} ${skill.enabled ? '已启用，双击停用' : '已停用，双击启用'}`}
         trackColor={{ true: colors.accent }}
         hitSlop={8}
       />
@@ -117,7 +117,7 @@ export default function SkillsScreen() {
     try {
       setSkills(sortSkills(await withAuthRetry((r) => listSkills(r))));
     } catch (e) {
-      handleError(e, 'Gateway unreachable — check your VPN or Wi-Fi, then pull to retry.');
+      handleError(e, '无法连接网关，请检查 VPN 或 Wi-Fi 后下拉重试。');
     } finally {
       setRefreshing(false);
       setLoaded(true);
@@ -145,7 +145,7 @@ export default function SkillsScreen() {
         replaceSkill(skill.name, { ...skill, enabled: res.enabled });
       } catch (e) {
         replaceSkill(skill.name, skill); // revert
-        handleError(e, `Couldn't ${enabling ? 'enable' : 'disable'} “${skill.name}” — gateway unreachable.`);
+        handleError(e, `无法${enabling ? '启用' : '停用'}“${skill.name}”，无法连接网关。`);
       }
     },
     [replaceSkill, handleError],
@@ -161,9 +161,9 @@ export default function SkillsScreen() {
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
       <Stack.Screen
         options={{
-          title: 'Skills',
+          title: '技能',
           headerSearchBarOptions: {
-            placeholder: 'Search skills',
+            placeholder: '搜索技能',
             onChangeText: (e) => setQuery(e.nativeEvent.text),
             hideWhenScrolling: true,
           },
@@ -189,12 +189,12 @@ export default function SkillsScreen() {
             <View style={{ alignItems: 'center', gap: 14, paddingTop: 96, paddingHorizontal: 32 }}>
               <Icon sf="sparkles" size={44} color={colors.textFaint} />
               <Text style={{ color: colors.text, fontSize: 18, fontWeight: '600' }}>
-                {query ? 'No matches' : 'No skills installed'}
+                {query ? '没有匹配结果' : '尚未安装技能'}
               </Text>
               <Text style={{ color: colors.textDim, fontSize: 14, textAlign: 'center' }}>
                 {query
-                  ? 'No skill name, description, or category matches your search.'
-                  : 'Install skills with “hermes skills install” on your gateway — they’ll show up here.'}
+                  ? '没有名称、描述或分类匹配的技能。'
+                  : '在网关运行 “hermes skills install” 安装技能后，即可在这里查看。'}
               </Text>
             </View>
           ) : null

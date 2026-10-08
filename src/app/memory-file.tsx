@@ -46,7 +46,7 @@ import { useTheme } from '@/theme';
 
 export { RouteError as ErrorBoundary } from '@/components/route-error';
 
-const DISCARD_MESSAGE = 'You have unsaved edits to this file.';
+const DISCARD_MESSAGE = '此文件有尚未保存的修改。';
 
 function HeaderButton({
   label,
@@ -153,10 +153,10 @@ export default function MemoryFileScreen() {
       setError(null);
       return;
     }
-    Alert.alert('Discard changes?', DISCARD_MESSAGE, [
-      { text: 'Keep editing', style: 'cancel' },
+    Alert.alert('放弃修改？', DISCARD_MESSAGE, [
+      { text: '继续编辑', style: 'cancel' },
       {
-        text: 'Discard',
+        text: '放弃修改',
         style: 'destructive',
         onPress: () => {
           setEditing(false);
@@ -170,7 +170,7 @@ export default function MemoryFileScreen() {
     if (!name || saving) return;
     if (memoryFileTooLarge(draft)) {
       setError(
-        `Too large — ${formatBytes(utf8ByteLength(draft))} exceeds the ${formatBytes(MEMORY_FILE_MAX_BYTES)} cap.`,
+        `文件过大，${formatBytes(utf8ByteLength(draft))} 超过 ${formatBytes(MEMORY_FILE_MAX_BYTES)} 限制。`,
       );
       return;
     }
@@ -191,7 +191,7 @@ export default function MemoryFileScreen() {
     }
   }
 
-  const title = name ? memoryFileLabel(name) : 'Memory file';
+  const title = name ? memoryFileLabel(name) : '记忆文件';
   const draftBytes = editing ? utf8ByteLength(draft) : 0;
   const overCap = editing && draftBytes > MEMORY_FILE_MAX_BYTES;
 
@@ -213,11 +213,11 @@ export default function MemoryFileScreen() {
           headerRight: () =>
             !name || content == null ? null : editing ? (
               <View style={{ flexDirection: 'row', gap: 4 }}>
-                <HeaderButton label="Cancel" disabled={saving} onPress={cancelEditing} />
-                <HeaderButton label={saving ? 'Saving…' : 'Save'} bold disabled={saving || !dirty} onPress={save} />
+                <HeaderButton label="取消" disabled={saving} onPress={cancelEditing} />
+                <HeaderButton label={saving ? '正在保存…' : '保存'} bold disabled={saving || !dirty} onPress={save} />
               </View>
             ) : (
-              <HeaderButton label="Edit" onPress={startEditing} />
+              <HeaderButton label="编辑" onPress={startEditing} />
             ),
         }}
       />
@@ -225,9 +225,10 @@ export default function MemoryFileScreen() {
       {!name ? (
         <View style={{ alignItems: 'center', gap: 14, paddingTop: 96, paddingHorizontal: 32 }}>
           <Icon sf="questionmark.folder" size={44} color={colors.textFaint} />
-          <Text style={{ color: colors.text, fontSize: 18, fontWeight: '600' }}>Unknown file</Text>
+          <Text style={{ color: colors.text, fontSize: 18, fontWeight: '600' }}>未知文件</Text>
           <Text style={{ color: colors.textDim, fontSize: 14, textAlign: 'center' }}>
-            Only MEMORY.md and USER.md can be opened here.
+
+            这里只能打开 MEMORY.md 和 USER.md。
           </Text>
         </View>
       ) : editing ? (
@@ -238,7 +239,7 @@ export default function MemoryFileScreen() {
             </Text>
           ) : null}
           <TextInput
-            accessibilityLabel={`${title} content`}
+            accessibilityLabel={`${title}内容`}
             multiline
             autoFocus
             autoCapitalize="none"
@@ -260,7 +261,7 @@ export default function MemoryFileScreen() {
             }}
           />
           <Text
-            accessibilityLabel={`File size ${formatBytes(draftBytes)} of ${formatBytes(MEMORY_FILE_MAX_BYTES)} allowed`}
+            accessibilityLabel={`文件大小 ${formatBytes(draftBytes)}，上限 ${formatBytes(MEMORY_FILE_MAX_BYTES)}`}
             style={{
               color: overCap ? colors.danger : colors.textFaint,
               fontSize: 12,
@@ -288,15 +289,17 @@ export default function MemoryFileScreen() {
           {content == null ? (
             !error ? (
               <Text style={{ color: colors.textFaint, fontSize: 14, textAlign: 'center', paddingTop: 48 }}>
-                Loading…
+
+                正在加载…
               </Text>
             ) : null
           ) : content.trim() === '' ? (
             <View style={{ alignItems: 'center', gap: 14, paddingTop: 72, paddingHorizontal: 16 }}>
               <Icon sf="doc.text" size={40} color={colors.textFaint} />
-              <Text style={{ color: colors.text, fontSize: 17, fontWeight: '600' }}>Empty</Text>
+              <Text style={{ color: colors.text, fontSize: 17, fontWeight: '600' }}>暂无内容</Text>
               <Text style={{ color: colors.textDim, fontSize: 14, textAlign: 'center' }}>
-                The agent fills this in as you chat — or tap Edit to write it yourself.
+
+                智能体会在对话中填写，也可以自行编辑。
               </Text>
             </View>
           ) : (

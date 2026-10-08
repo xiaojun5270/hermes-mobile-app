@@ -276,7 +276,7 @@ describe('historyToItems', () => {
   // own assistant row (agent/message_sanitization.py close_interrupted_tool_sequence, v2026.9.24).
   // The live stream never carries that text; the live transcript shows the "Stopped" marker.
   describe('the gateway\'s closing row of a stopped turn', () => {
-    const stopped = { role: 'status', text: 'Stopped', marker: 'stopped' };
+    const stopped = { role: 'status', text: '已停止', marker: 'stopped' };
 
     it('becomes the Stopped marker, at its own position', () => {
       const items = historyToItems(
@@ -301,7 +301,7 @@ describe('historyToItems', () => {
       ['Operation interrupted: waiting for model response (3.2s elapsed).'],
       ['Operation interrupted during retry (rate limited by upstream provider (429), attempt 2/3).'],
       ['Operation interrupted during retry (upstream server error (502, 12s), attempt 1/3).'],
-      ['Operation interrupted: handling API error (APIConnectionError: Connection error.).'],
+      ['Operation interrupted: handling API error (API连接Error: 连接 error.).'],
       [`Operation interrupted: handling API error (APIStatusError: ${'x'.repeat(150)}...).`],
       ['Operation interrupted: retrying API call after error (retry 1/3).'],
       ['Operation interrupted: retrying empty response from model (retry 1/2).'],

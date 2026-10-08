@@ -40,7 +40,7 @@ function SubagentRow({
   // Collapsed row prefers the completion summary once finished, else the latest step.
   const headline = s.status !== 'running' && s.summary ? s.summary : s.activity;
   const fileCount = (s.filesRead?.length ?? 0) + (s.filesWritten?.length ?? 0);
-  const footer = [s.model, fileCount > 0 ? `${fileCount} file${fileCount === 1 ? '' : 's'}` : '']
+  const footer = [s.model, fileCount > 0 ? `${fileCount} 个文件` : '']
     .filter(Boolean)
     .join(' · ');
   return (
@@ -52,7 +52,7 @@ function SubagentRow({
           <Icon sf={doneGlyph} size={12} color={dot} />
         )}
         <Text numberOfLines={1} style={{ flex: 1, color: colors.text, fontSize: 13 }}>
-          {s.goal || 'subagent'}
+          {s.goal || '子智能体'}
         </Text>
         {elapsed !== undefined ? (
           <Text style={{ color: colors.textFaint, fontSize: 11.5, fontVariant: ['tabular-nums'] }}>
@@ -86,7 +86,7 @@ function SubagentRow({
         // Collapsed: running rows show the current step; finished rows show the summary.
         <Text numberOfLines={1} style={{ color: colors.textFaint, fontSize: 12, marginLeft: 14 }}>
           ↳ {headline}
-          {s.toolCount ? ` · ${s.toolCount} tools` : ''}
+          {s.toolCount ? ` · ${s.toolCount} 个工具` : ''}
         </Text>
       ) : null}
     </View>
@@ -107,14 +107,14 @@ export function SubagentMonitorCard({ batch }: { batch: SubagentBatch }) {
 
   const runningCount = batch.subagents.filter((s) => s.status === 'running').length;
   const doneCount = batch.subagents.length - runningCount;
-  const header = running ? `${runningCount} running` : `${doneCount} done`;
+  const header = running ? `${runningCount} 个运行中` : `${doneCount} 个已完成`;
   const totalCost = batch.subagents.reduce((acc, s) => acc + (s.costUsd ?? 0), 0);
 
   return (
     <View style={{ paddingVertical: 4 }}>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={`Subagents, ${header}, tap to ${expanded ? 'collapse' : 'expand'}`}
+        accessibilityLabel={`子智能体，${header}，${expanded ? '收起' : '展开'}`}
         onPress={() => {
           LayoutAnimation.configureNext(LayoutAnimation.create(220, 'easeInEaseOut', 'opacity'));
           setExpanded((e) => !e);
@@ -131,7 +131,7 @@ export function SubagentMonitorCard({ batch }: { batch: SubagentBatch }) {
       >
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
           <Icon sf="square.grid.2x2" size={12} color={colors.accent} />
-          <Text style={{ color: colors.text, fontSize: 13.5, fontWeight: '600' }}>Subagents</Text>
+          <Text style={{ color: colors.text, fontSize: 13.5, fontWeight: '600' }}>子智能体</Text>
           <Text style={{ color: colors.textDim, fontSize: 13 }}>{header}</Text>
           <View style={{ flex: 1 }} />
           <Icon sf={expanded ? 'chevron.up' : 'chevron.down'} size={11} color={colors.textFaint} />
@@ -142,7 +142,7 @@ export function SubagentMonitorCard({ batch }: { batch: SubagentBatch }) {
           ))}
         </View>
         {!running && totalCost > 0 ? (
-          <Text style={{ color: colors.textFaint, fontSize: 12 }}>total ~${totalCost.toFixed(2)}</Text>
+          <Text style={{ color: colors.textFaint, fontSize: 12 }}>总费用约 ${totalCost.toFixed(2)}</Text>
         ) : null}
       </Pressable>
     </View>

@@ -16,7 +16,7 @@ const items: ChatItem[] = [
 describe('exportAsText', () => {
   it('renders You:/Hermes: turns and tool lines with name + summary', () => {
     expect(exportAsText(items)).toBe(
-      'You: list my sessions\n\n[tool] sessions_list — Found 3 sessions\n\nHermes: You have **3** sessions.',
+      '你：list my sessions\n\n[工具] sessions_list：Found 3 sessions\n\nHermes: You have **3** sessions.',
     );
   });
 
@@ -25,12 +25,12 @@ describe('exportAsText', () => {
       { key: 'a', role: 'tool', text: 'bash', tool: { id: 't1', name: 'bash', running: false, context: 'ls -la' } },
       { key: 'b', role: 'tool', text: 'read_file', tool: { id: 't2', name: 'read_file', running: false } },
     ];
-    expect(exportAsText(tools)).toBe('[tool] bash — ls -la\n\n[tool] read_file');
+    expect(exportAsText(tools)).toBe('[工具] bash：ls -la\n\n[工具] read_file');
   });
 
   it('renders status lines', () => {
     const mixed: ChatItem[] = [{ key: 'a', role: 'status', text: 'Compacting context…' }];
-    expect(exportAsText(mixed)).toBe('[status] Compacting context…');
+    expect(exportAsText(mixed)).toBe('[状态] Compacting context…');
   });
 
   it('drops empty user/assistant/status rows and returns "" for no items', () => {
@@ -39,7 +39,7 @@ describe('exportAsText', () => {
       { key: 'b', role: 'user', text: 'hi', complete: true },
       { key: 'c', role: 'status', text: '' },
     ];
-    expect(exportAsText(sparse)).toBe('You: hi');
+    expect(exportAsText(sparse)).toBe('你：hi');
     expect(exportAsText([])).toBe('');
   });
 });

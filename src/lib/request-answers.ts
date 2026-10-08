@@ -49,7 +49,7 @@ export interface RequestResponder {
   value(card: RequestCardState, value: string): AnswerOutcome;
 }
 
-const GONE: AnswerOutcome = { ok: false, message: 'This request is no longer open.' };
+const GONE: AnswerOutcome = { ok: false, message: '此请求已关闭。' };
 
 function summary(answer: ClarifyAnswer): string {
   return Array.isArray(answer) ? answer.join(', ') : answer;
@@ -97,7 +97,7 @@ export function createRequestResponder(deps: ResponderDeps): RequestResponder {
         return { ok: true };
       }
       const sid = deps.liveSessionId();
-      if (!sid) return { ok: false, message: 'Not connected.' };
+      if (!sid) return { ok: false, message: '尚未连接。' };
       deps.dispatch({ type: 'request.answering', id: card.id });
       try {
         const res = await deps.call('approval.respond', { session_id: sid, choice });
@@ -106,7 +106,7 @@ export function createRequestResponder(deps: ResponderDeps): RequestResponder {
         return { ok: true };
       } catch (e) {
         deps.dispatch({ type: 'request.failed', id: card.id });
-        return { ok: false, message: e instanceof Error && e.message ? e.message : 'Approval failed.' };
+        return { ok: false, message: e instanceof Error && e.message ? e.message : '授权失败。' };
       }
     },
 

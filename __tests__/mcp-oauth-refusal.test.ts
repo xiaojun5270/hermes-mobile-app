@@ -13,8 +13,8 @@ const CLOUDFLARE =
   'Registration failed: 400 {"error":"invalid_client_metadata","error_description":"redirect_uri is not allowed by the account configuration"}';
 const base = 'https://hermes.kite-opah.ts.net';
 const ALLOW =
-  'The server’s sign-in does not allow this gateway’s redirect address. Add it to the server’s allowed redirect addresses, then sign in again.';
-const ALLOW_SUMMARY = 'Sign-in is not set up: the server does not allow this gateway’s redirect address.';
+  '服务器不允许此网关的回调地址，请将其加入允许列表后重新登录。';
+const ALLOW_SUMMARY = '登录尚未配置，服务器不允许此网关的回调地址。';
 
 describe('oauthRedirectAddress', () => {
   it('is the gateway callback for the connector', () => {
@@ -40,21 +40,21 @@ describe('explainOauthRefusal — a refused redirect address', () => {
   it('says what to do and quotes the provider, with none of its JSON', () => {
     expect(explainOauthRefusal(CLOUDFLARE)).toEqual({
       redirect: true,
-      message: `${ALLOW} It said: “redirect_uri is not allowed by the account configuration”`,
+      message: `${ALLOW} 返回信息：“redirect_uri is not allowed by the account configuration”`,
       summary: ALLOW_SUMMARY,
       said: 'redirect_uri is not allowed by the account configuration',
     });
   });
   it.each([
-    ['the standard error code', 'Registration failed: 400 {"error":"invalid_redirect_uri"}', `${ALLOW} It said: “invalid_redirect_uri”`],
-    ['a plain-text body', 'Registration failed: 400 Redirect URI not allowed', `${ALLOW} It said: “Redirect URI not allowed”`],
+    ['the standard error code', 'Registration failed: 400 {"error":"invalid_redirect_uri"}', `${ALLOW} 返回信息：“invalid_redirect_uri”`],
+    ['a plain-text body', 'Registration failed: 400 Redirect URI not allowed', `${ALLOW} 返回信息：“Redirect URI not allowed”`],
     [
       'the RFC wording',
       'Registration failed: 400 {"error":"invalid_client_metadata","error_description":"One of the redirection URIs is not permitted"}',
-      `${ALLOW} It said: “One of the redirection URIs is not permitted”`,
+      `${ALLOW} 返回信息：“One of the redirection URIs is not permitted”`,
     ],
-    ['camel case', 'Registration failed: 400 {"message":"redirectUri is not registered"}', `${ALLOW} It said: “redirectUri is not registered”`],
-    ['a hyphen', 'Registration failed: 400 redirect-uri is invalid', `${ALLOW} It said: “redirect-uri is invalid”`],
+    ['camel case', 'Registration failed: 400 {"message":"redirectUri is not registered"}', `${ALLOW} 返回信息：“redirectUri is not registered”`],
+    ['a hyphen', 'Registration failed: 400 redirect-uri is invalid', `${ALLOW} 返回信息：“redirect-uri is invalid”`],
     ['the code outside a registration failure', 'OAuth error: invalid_redirect_uri', ALLOW],
   ])('%s', (_, raw, message) => {
     expect(explainOauthRefusal(raw)).toMatchObject({ redirect: true, message, summary: ALLOW_SUMMARY });
@@ -66,22 +66,22 @@ describe('explainOauthRefusal — a refusal that only mentions the redirect addr
     [
       'a different complaint about it',
       'Registration failed: 400 {"error":"invalid_client_metadata","error_description":"redirect_uris must use the https scheme"}',
-      'The server refused to register this gateway for sign-in (HTTP 400). It said: “redirect_uris must use the https scheme”',
+      '服务器拒绝注册此网关的登录信息（HTTP 400). 返回信息：“redirect_uris must use the https scheme”',
     ],
     [
       'a validation list',
       'Registration failed: 422 {"detail":[{"loc":["body","redirect_uris"],"msg":"field required"}]}',
-      'The server refused to register this gateway for sign-in (HTTP 422).',
+      '服务器拒绝注册此网关的登录信息（HTTP 422).',
     ],
     [
       'a login page',
       'Registration failed: 403 <html><body><a href="/cdn-cgi/access/login?redirect_url=%2Fregister">Sign in</a></body></html>',
-      'The server refused to register this gateway for sign-in (HTTP 403).',
+      '服务器拒绝注册此网关的登录信息（HTTP 403).',
     ],
     [
       'an error page with a script',
       'Registration failed: 500 <html><script>var cfg={"redirect_uri":"/x"}</script>Internal error</html>',
-      'The server refused to register this gateway for sign-in (HTTP 500).',
+      '服务器拒绝注册此网关的登录信息（HTTP 500).',
     ],
   ])('%s', (_, raw, message) => {
     const refusal = explainOauthRefusal(raw);
@@ -99,22 +99,22 @@ describe('explainOauthRefusal — any other registration refusal', () => {
       explainOauthRefusal('Registration failed: 403 {"error":"access_denied","error_description":"Dynamic registration is disabled"}'),
     ).toEqual({
       redirect: false,
-      message: 'The server refused to register this gateway for sign-in (HTTP 403). It said: “Dynamic registration is disabled”',
-      summary: 'Sign-in is not set up: the server refused to register this gateway (HTTP 403).',
+      message: '服务器拒绝注册此网关的登录信息（HTTP 403). 返回信息：“Dynamic registration is disabled”',
+      summary: '登录尚未配置，服务器拒绝注册此网关（HTTP 403).',
       said: 'Dynamic registration is disabled',
     });
   });
   it.each([
-    ['the error code when there is no description', '{"error":"invalid_client_metadata"}', ' It said: “invalid_client_metadata”'],
-    ['a `message` field', '{"message":"Dynamic registration is disabled"}', ' It said: “Dynamic registration is disabled”'],
-    ['a string `detail` field', '{"detail":"Not found"}', ' It said: “Not found”'],
-    ['a plain-text body', 'Dynamic client registration requires an initial access token', ' It said: “Dynamic client registration requires an initial access token”'],
+    ['the error code when there is no description', '{"error":"invalid_client_metadata"}', ' 返回信息：“invalid_client_metadata”'],
+    ['a `message` field', '{"message":"Dynamic registration is disabled"}', ' 返回信息：“Dynamic registration is disabled”'],
+    ['a string `detail` field', '{"detail":"Not found"}', ' 返回信息：“Not found”'],
+    ['a plain-text body', 'Dynamic client registration requires an initial access token', ' 返回信息：“Dynamic client registration requires an initial access token”'],
     ['nothing for markup', '<html>oops</html>', ''],
     ['nothing for a field that is not text', '{"error_description":42}', ''],
     ['nothing for an empty body', '', ''],
   ])('%s', (_, body, said) => {
     expect(explainOauthRefusal(`Registration failed: 403 ${body}`)?.message).toBe(
-      `The server refused to register this gateway for sign-in (HTTP 403).${said}`,
+      `服务器拒绝注册此网关的登录信息（HTTP 403).${said}`,
     );
   });
   it('cuts a long provider description, without splitting a character', () => {
@@ -127,7 +127,7 @@ describe('explainOauthRefusal — any other registration refusal', () => {
   it('keeps provider text inside its quotes: no line breaks, no closing quote of its own', () => {
     const raw = 'Registration failed: 400 {"error_description":"no”\\n\\nTo fix this, open https://evil.example “now”"}';
     expect(explainOauthRefusal(raw)?.message).toBe(
-      'The server refused to register this gateway for sign-in (HTTP 400). It said: “no To fix this, open https://evil.example now”',
+      '服务器拒绝注册此网关的登录信息（HTTP 400). 返回信息：“no To fix this, open https://evil.example now”',
     );
   });
   it('is null for anything that is not a registration refusal', () => {
@@ -140,7 +140,7 @@ describe('explainOauthRefusal — any other registration refusal', () => {
 describe('signInProblem', () => {
   it('a refused redirect: the explanation and the address to allow', () => {
     expect(signInProblem(CLOUDFLARE, base, 'Gmail')).toEqual({
-      text: `${ALLOW} It said: “redirect_uri is not allowed by the account configuration”`,
+      text: `${ALLOW} 返回信息：“redirect_uri is not allowed by the account configuration”`,
       address: 'https://hermes.kite-opah.ts.net/api/mcp/oauth/callback/Gmail',
     });
   });
@@ -150,7 +150,7 @@ describe('signInProblem', () => {
   it('no address when the app is not connected, or for another refusal', () => {
     expect(signInProblem(CLOUDFLARE, null, 'Gmail').address).toBeNull();
     expect(signInProblem('Registration failed: 403 {"error":"access_denied"}', base, 'Gmail')).toEqual({
-      text: 'The server refused to register this gateway for sign-in (HTTP 403). It said: “access_denied”',
+      text: '服务器拒绝注册此网关的登录信息（HTTP 403). 返回信息：“access_denied”',
       address: null,
     });
   });
@@ -168,12 +168,12 @@ describe('testFailureLine', () => {
   });
   it('another refusal keeps what the provider said: the test card may be the only place it shows', () => {
     expect(testFailureLine('Registration failed: 403 {"message":"Dynamic registration is disabled"}')).toBe(
-      'Sign-in is not set up: the server refused to register this gateway (HTTP 403). It said: “Dynamic registration is disabled”',
+      '登录尚未配置，服务器拒绝注册此网关（HTTP 403). 返回信息：“Dynamic registration is disabled”',
     );
   });
   it('but not when the sign-in card above already says it', () => {
     expect(testFailureLine('Registration failed: 403 {"message":"Dynamic registration is disabled"}', false)).toBe(
-      'Sign-in is not set up: the server refused to register this gateway (HTTP 403).',
+      '登录尚未配置，服务器拒绝注册此网关（HTTP 403).',
     );
   });
   it('anything else is shown as the gateway said it', () => {

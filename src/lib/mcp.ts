@@ -60,12 +60,12 @@ export interface CustomServerIssues {
 export function validateCustomServer(draft: CustomServerDraft): CustomServerIssues {
   const issues: CustomServerIssues = {};
   const name = draft.name.trim();
-  if (!name) issues.name = 'Enter a name.';
-  else if (/[\s/]/.test(name)) issues.name = 'Use a name without spaces or slashes.';
+  if (!name) issues.name = '请输入名称。';
+  else if (/[\s/]/.test(name)) issues.name = '名称不能包含空格或斜杠。';
 
   const url = draft.url.trim();
   if (!url) {
-    issues.url = 'Enter the server URL.';
+    issues.url = '请输入服务器地址。';
   } else {
     let parsed: URL | null = null;
     try {
@@ -75,19 +75,19 @@ export function validateCustomServer(draft: CustomServerDraft): CustomServerIssu
     }
     const protocol = parsed?.protocol ?? '';
     if (protocol !== 'http:' && protocol !== 'https:') {
-      issues.url = 'Enter a URL that starts with https://';
+      issues.url = '请输入以 https:// 开头的地址。';
     } else if (parsed) {
       const cautions: string[] = [];
-      if (protocol === 'http:') cautions.push('Traffic between your gateway and this server will not be encrypted.');
+      if (protocol === 'http:') cautions.push('网关与此服务器之间的通信不会加密。');
       // The URL is not typed into the secret form: it is kept as written and shown on the connector.
       if (parsed.search || parsed.username || parsed.password) {
-        cautions.push('This URL carries a key or credentials. It is stored on the gateway as written and shown in the app.');
+        cautions.push('此地址包含密钥或凭据，将原样保存在网关并显示在应用中。');
       }
       if (cautions.length > 0) issues.caution = cautions.join(' ');
     }
   }
 
-  if (draft.auth === 'header' && !draft.hasToken) issues.token = 'Enter the token.';
+  if (draft.auth === 'header' && !draft.hasToken) issues.token = '请输入令牌。';
   return issues;
 }
 
@@ -125,9 +125,9 @@ export function serverCapabilities(server: McpServer): ServerCapabilities {
 
 // --- labels ----------------------------------------------------------------
 
-export function authLabel(server: McpServer): 'OAuth' | 'Token' | null {
+export function authLabel(server: McpServer): 'OAuth' | '令牌' | null {
   if (server.auth === 'oauth') return 'OAuth';
-  if (server.auth === 'header') return 'Token';
+  if (server.auth === 'header') return '令牌';
   return null;
 }
 
@@ -146,7 +146,7 @@ export function serverSubtitle(server: McpServer): string {
 
 const tools = (n: unknown): string => {
   const count = typeof n === 'number' && Number.isFinite(n) ? n : 0;
-  return `${count} ${count === 1 ? 'tool' : 'tools'}`;
+  return `${count} 个工具`;
 };
 
 /** True when the switch and the running gateway disagree: the config says on but the server
@@ -164,25 +164,25 @@ export function statusLine(server: McpServer, row?: McpRuntimeRow): string | nul
   let line: string;
   switch (row.status) {
     case 'connected':
-      line = `Connected · ${tools(row.tools)}`;
+      line = `已连接 · ${tools(row.tools)}`;
       break;
     case 'lazy':
-      line = `Ready · ${tools(row.tools)}`;
+      line = `就绪 · ${tools(row.tools)}`;
       break;
     case 'connecting':
-      return 'Connecting…';
+      return '正在连接…';
     case 'failed':
-      return 'Failed';
+      return '失败';
     case 'disabled':
-      line = 'Off';
+      line = '已关闭';
       break;
     case 'configured':
-      line = 'Not loaded yet';
+      line = '尚未加载';
       break;
     default:
       return null;
   }
-  return needsReload(server, row) ? `${line} · changes after reload` : line;
+  return needsReload(server, row) ? `${line} · 重新加载后生效` : line;
 }
 
 const RUNTIME_STATES = new Set(['connected', 'lazy', 'connecting', 'failed']);
@@ -201,18 +201,18 @@ export function connectorBadges(server: McpServer): string[] {
   const badges: string[] = [];
   const auth = authLabel(server);
   if (auth) badges.push(auth);
-  if (server.transport === 'stdio') badges.push('Local');
-  if (server.source === 'plugin') badges.push('Plugin');
+  if (server.transport === 'stdio') badges.push('本地');
+  if (server.source === 'plugin') badges.push('插件');
   return badges;
 }
 
-const plural = (n: number, word: string): string => `${n} ${word}${n === 1 ? '' : 's'}`;
+const plural = (n: number, word: string): string => `${n} 个${word}`;
 
 /** First line of a passed test: "Working · 3 tools · 2 prompts". */
 export function testSummary(outcome: { tools: unknown[]; prompts: number; resources: number }): string {
-  const parts = [`Working · ${plural(outcome.tools.length, 'tool')}`];
-  if (outcome.prompts > 0) parts.push(plural(outcome.prompts, 'prompt'));
-  if (outcome.resources > 0) parts.push(plural(outcome.resources, 'resource'));
+  const parts = [`连接正常 · ${plural(outcome.tools.length, '工具')}`];
+  if (outcome.prompts > 0) parts.push(plural(outcome.prompts, '提示词'));
+  if (outcome.resources > 0) parts.push(plural(outcome.resources, '资源'));
   return parts.join(' · ');
 }
 
@@ -231,9 +231,9 @@ export type ConnectorError =
   | { kind: 'gone'; message: string }
   | { kind: 'message'; message: string };
 
-const UNSUPPORTED = "This gateway doesn't support connectors (needs Hermes 0.21.5 or later).";
-const GONE = 'This connector no longer exists.';
-const UNREACHABLE = 'Gateway unreachable — check your VPN or Wi-Fi.';
+const UNSUPPORTED = '此网关不支持连接器，需要 Hermes 0.21.5 或更新版本。';
+const GONE = '此连接器已不存在。';
+const UNREACHABLE = '无法连接网关，请检查 VPN 或 Wi-Fi。';
 
 const isRead = (a: ConnectorAction): boolean => a === 'list' || a === 'catalog';
 const isServerAction = (a: ConnectorAction): boolean => a === 'switch' || a === 'remove' || a === 'signin';
@@ -247,7 +247,8 @@ export function connectorError(error: unknown, action: ConnectorAction): Connect
   if (error instanceof McpAlreadyAddedError) return { kind: 'message', message: error.message };
   if (error instanceof HttpError) {
     if (error.status === 404) {
-      const bare = /^not found$/i.test(error.message) || error.message.startsWith('HTTP 404 on ');
+      const bare = /^not found$/i.test(error.message) || error.message.startsWith('HTTP 404 on ') ||
+        /^请求 .+ 失败（HTTP 404）$/.test(error.message);
       if (isRead(action) && bare) return { kind: 'unsupported', message: UNSUPPORTED };
       if (isServerAction(action)) return { kind: 'gone', message: GONE };
     }
@@ -255,18 +256,18 @@ export function connectorError(error: unknown, action: ConnectorAction): Connect
       const write = action === 'add' || action === 'install';
       return {
         kind: 'message',
-        message: `The gateway did not answer in time.${write ? ' Check the list before trying again.' : ''}`,
+        message: `网关响应超时。${write ? ' 请先检查列表再重试。' : ''}`,
       };
     }
     // RestClient surfaces only a string `detail`; without one (a FastAPI 422 carries a list)
     // its message is "HTTP <status> on <path>", which is not something to show.
-    if (/^HTTP \d+ on /.test(error.message)) {
+    if (/^HTTP \d+ on /.test(error.message) || /^请求 .+ 失败（HTTP \d+）$/.test(error.message)) {
       return {
         kind: 'message',
         message:
           error.status === 422
-            ? 'The gateway could not read this request.'
-            : `The gateway returned an error (HTTP ${error.status}).`,
+            ? '网关无法读取此请求。'
+            : `网关返回错误（HTTP ${error.status}).`,
       };
     }
     return { kind: 'message', message: error.message };
@@ -289,9 +290,9 @@ export function checkAuthorizationUrl(url: string, baseUrl: string): string | nu
   try {
     auth = new URL(url);
   } catch {
-    return 'The gateway returned a sign-in address that is not a valid URL.';
+    return '网关返回了无效的登录地址。';
   }
-  if (auth.protocol !== 'https:') return 'The sign-in address is not HTTPS, so it was not opened.';
+  if (auth.protocol !== 'https:') return '登录地址未使用 HTTPS，已阻止打开。';
 
   // Every value is checked: a provider could read a different one than the first.
   const redirects = auth.searchParams.getAll('redirect_uri');
@@ -301,7 +302,7 @@ export function checkAuthorizationUrl(url: string, baseUrl: string): string | nu
   try {
     want = new URL(baseUrl.trim());
   } catch {
-    return 'The gateway address in this app is not a valid URL.';
+    return '应用中配置的网关地址无效。';
   }
   const basePath = want.pathname.replace(/\/+$/, '');
   const prefix = `${basePath}/api/mcp/oauth/callback/`;
@@ -316,7 +317,7 @@ export function checkAuthorizationUrl(url: string, baseUrl: string): string | nu
   // `origin` drops any credentials in the stored gateway URL.
   return reachable
     ? null
-    : `The gateway would send the sign-in back to an address this phone cannot reach. Set HERMES_DASHBOARD_PUBLIC_URL on the gateway to ${want.origin}${basePath}.`;
+    : `网关的登录回调地址无法由此手机访问，请将网关的 HERMES_DASHBOARD_PUBLIC_URL 设置为 ${want.origin}${basePath}.`;
 }
 
 /** The address the gateway asks a provider to send a sign-in back to, unless the gateway is
@@ -335,7 +336,7 @@ export function oauthRedirectAddress(baseUrl: string, name: string): string | nu
 }
 
 export const OAUTH_NEEDS_HTTPS =
-  'Sign-in needs the gateway on an https:// address; providers do not accept a plain-HTTP redirect.';
+  '登录需要网关使用 HTTPS 地址，提供商不接受普通 HTTP 回调。';
 
 /** A provider's refusal to register the gateway for sign-in, in words. */
 export interface OauthRefusal {
@@ -392,9 +393,9 @@ function providerAnswer(body: string): { code: string | null; said: string | nul
 }
 
 const ALLOW_REDIRECT =
-  'The server’s sign-in does not allow this gateway’s redirect address. Add it to the server’s allowed redirect addresses, then sign in again.';
-const ALLOW_REDIRECT_SUMMARY = 'Sign-in is not set up: the server does not allow this gateway’s redirect address.';
-const itSaid = (said: string | null): string => (said ? ` It said: “${said}”` : '');
+  '服务器不允许此网关的回调地址，请将其加入允许列表后重新登录。';
+const ALLOW_REDIRECT_SUMMARY = '登录尚未配置，服务器不允许此网关的回调地址。';
+const itSaid = (said: string | null): string => (said ? ` 返回信息：“${said}”` : '');
 
 /** The gateway passes a provider's registration refusal through as
  * `Registration failed: <status> <body>`. Null for any other text.
@@ -419,8 +420,8 @@ export function explainOauthRefusal(text: string): OauthRefusal | null {
   }
   return {
     redirect: false,
-    message: `The server refused to register this gateway for sign-in (HTTP ${status}).${itSaid(said)}`,
-    summary: `Sign-in is not set up: the server refused to register this gateway (HTTP ${status}).`,
+    message: `服务器拒绝注册此网关的登录信息（HTTP ${status}).${itSaid(said)}`,
+    summary: `登录尚未配置，服务器拒绝注册此网关（HTTP ${status}).`,
     said,
   };
 }
@@ -482,22 +483,22 @@ export function collectSecretValues(
 
 /** How a catalog entry authenticates, in words. */
 export function catalogAuthLabel(entry: McpCatalogEntry): string {
-  if (entry.auth_type === 'oauth') return 'OAuth sign-in';
-  if (!entry.auth_type || entry.auth_type === 'none') return 'No sign-in needed';
+  if (entry.auth_type === 'oauth') return 'OAuth 登录';
+  if (!entry.auth_type || entry.auth_type === 'none') return '无需登录';
   return entry.auth_type;
 }
 
 /** "Sign in again" only when the last test saw a token on the gateway; otherwise "Sign in". */
-export function signInLabel(outcome: McpTestOutcome | null): 'Sign in' | 'Sign in again' {
-  return outcome && outcome.kind !== 'error' && outcome.tokensPresent === true ? 'Sign in again' : 'Sign in';
+export function signInLabel(outcome: McpTestOutcome | null): '登录' | '重新登录' {
+  return outcome && outcome.kind !== 'error' && outcome.tokensPresent === true ? '重新登录' : '登录';
 }
 
 /** The Remove alert. Removing deletes only the config entry: tokens stay on the gateway. */
 export function removeConfirmation(name: string): { title: string; message: string } {
   return {
-    title: `Remove ${name}?`,
+    title: `移除 ${name}?`,
     message:
-      'The agent stops using it after a reload or a gateway restart. Its sign-in and any stored token stay on the gateway until they are removed there.',
+      '重新加载或重启网关后，智能体将停止使用此连接器。登录信息和令牌仍保留在网关，需在网关上另行删除。',
   };
 }
 

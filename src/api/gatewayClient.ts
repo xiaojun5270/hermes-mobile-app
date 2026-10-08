@@ -19,6 +19,13 @@ export class RpcError extends Error {
   }
 }
 
+export class DeliveryUnknownError extends RpcError {
+  constructor(message: string) {
+    super(message, -1);
+    this.name = 'DeliveryUnknownError';
+  }
+}
+
 export interface GatewayClientDeps {
   /** Today's makeNativeSocket — no Origin header (spec §4.1, review m1). */
   socketFactory: (url: string) => WebSocket;

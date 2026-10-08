@@ -1,11 +1,12 @@
 import { useLayoutEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { Image } from 'expo-image';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { Icon } from '@/components/icon';
 import { composerMinHeight, valueSetFromJs } from '@/lib/composer-height';
 import type { ComposerMode } from '@/lib/turn-controller';
 import { useTheme } from '@/theme';
+import { fileSize, type StagedFile } from '@/lib/outgoing';
 
 interface ComposerProps {
   value: string;
@@ -29,6 +30,10 @@ interface ComposerProps {
   modelName?: string | null;
   /** Open the model picker. */
   onModelPress?: () => void;
+  sending?: boolean;
+  files?: StagedFile[];
+  onRemoveFile?: (id: string) => void;
+  onQueue?: () => void;
 }
 
 /** Floating card composer in the style of the Claude app: input on top,
@@ -46,13 +51,18 @@ export function Composer({
   onRemoveImage,
   modelName,
   onModelPress,
+  sending,
+  files = [],
+  onRemoveFile,
+  onQueue,
 }: ComposerProps) {
   const { colors, dark } = useTheme();
   const running = mode.kind === 'stop+steer';
   const stopping = running && !mode.stopEnabled;
-  const canSend = !disabled && mode.kind === 'send' && mode.enabled;
+  const canSend = !disabled && !sending && mode.kind === 'send' && mode.enabled;
   const canStop = !disabled && running && mode.stopEnabled;
-  const canSteer = !disabled && running && mode.steerEnabled;
+  const canSteer = !disabled && !sending && running && mode.steerEnabled;
+  const canQueue = !disabled && !sending && (value.trim().length > 0 || Boolean(stagedImageUri) || files.length > 0);
   const hasText = value.trim().length > 0;
 
   // Fabric measures a JS-set TextInput against its previous text, so after a
@@ -91,7 +101,7 @@ export function Composer({
             <View style={{ width: 64, height: 64 }}>
               <Image
                 source={{ uri: stagedImageUri }}
-                accessibilityLabel="Staged photo"
+                accessibilityLabel="待发送照片"
                 contentFit="cover"
                 style={{
                   width: 64,
@@ -102,8 +112,9 @@ export function Composer({
               />
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel="Remove photo"
+                accessibilityLabel="移除照片"
                 onPress={onRemoveImage}
+                disabled={sending}
                 hitSlop={12}
                 style={({ pressed }) => ({
                   position: 'absolute',
@@ -124,10 +135,32 @@ export function Composer({
             </View>
             {running ? (
               <Text style={{ color: colors.textFaint, fontSize: 12.5, alignSelf: 'center', marginLeft: 10, flexShrink: 1 }}>
-                Tap Send once Hermes finishes
+
+                本轮结束后可发送这张照片
               </Text>
             ) : null}
           </Animated.View>
+        ) : null}
+
+        {files.length ? (
+          <ScrollView style={{ maxHeight: 156 }} contentContainerStyle={{ gap: 6 }} keyboardShouldPersistTaps="handled">
+            {files.map((file) => (
+              <View key={file.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 8, padding: 9, borderWidth: 1, borderColor: colors.border, borderRadius: 8 }}>
+                <Icon sf="doc" size={20} color={colors.textDim} />
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text numberOfLines={2} style={{ color: colors.text, fontSize: 14 }}>{file.name}</Text>
+                  <Text style={{ color: file.error ? colors.danger : colors.textFaint, fontSize: 12 }}>
+                    {fileSize(file.size)} · {({ ready: '待发送', reading: '读取中', uploading: '上传中', uploaded: '已上传', error: '失败，可重试', unknown: '上传结果未确认' })[file.status]}
+                  </Text>
+                  {file.error ? <Text numberOfLines={2} style={{ color: colors.danger, fontSize: 12 }}>{file.error}</Text> : null}
+                </View>
+                {file.status === 'reading' || file.status === 'uploading' ? <ActivityIndicator color={colors.accent} /> : null}
+                <Pressable accessibilityRole="button" accessibilityLabel={`移除文件 ${file.name}`} disabled={sending} onPress={() => onRemoveFile?.(file.id)} hitSlop={6} style={{ width: 32, height: 32, alignItems: 'center', justifyContent: 'center' }}>
+                  <Icon sf="xmark" size={13} color={colors.textDim} />
+                </Pressable>
+              </View>
+            ))}
+          </ScrollView>
         ) : null}
 
         <TextInput
@@ -136,9 +169,9 @@ export function Composer({
             lastEmittedRef.current = t;
             onChangeText(t);
           }}
-          editable={!disabled}
+          editable={!disabled && !sending}
           multiline
-          placeholder={running ? 'Steer Hermes…' : 'Chat with Hermes'}
+          placeholder={running ? '引导当前任务…' : '与 Hermes 对话'}
           placeholderTextColor={colors.placeholder}
           style={{
             color: colors.text,
@@ -154,9 +187,9 @@ export function Composer({
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Add photo"
+            accessibilityLabel="添加附件"
             onPress={onAttachPress}
-            disabled={disabled}
+            disabled={disabled || sending}
             hitSlop={6}
             style={({ pressed }) => ({
               width: 34,
@@ -175,8 +208,9 @@ export function Composer({
           {modelName ? (
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel={`Model: ${modelName}. Change model`}
+              accessibilityLabel={`模型：${modelName}，更换模型`}
               onPress={onModelPress}
+              disabled={sending}
               hitSlop={6}
               style={({ pressed }) => ({
                 paddingHorizontal: 13,
@@ -185,6 +219,7 @@ export function Composer({
                 justifyContent: 'center',
                 backgroundColor: pressed ? colors.userBubble : colors.raised,
                 maxWidth: 180,
+                flexShrink: 1,
               })}
             >
               <Text numberOfLines={1} style={{ color: colors.text, fontSize: 14, fontWeight: '500' }}>
@@ -199,7 +234,7 @@ export function Composer({
             <>
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel={stopping ? 'Stopping response' : 'Stop response'}
+                accessibilityLabel={stopping ? '正在停止回复' : '停止回复'}
                 accessibilityState={{ disabled: !canStop, busy: stopping }}
                 onPress={onStop}
                 disabled={!canStop}
@@ -221,16 +256,16 @@ export function Composer({
                 {stopping ? (
                   <>
                     <ActivityIndicator size="small" color={colors.textDim} />
-                    <Text style={{ color: colors.textDim, fontSize: 14, fontWeight: '500' }}>Stopping…</Text>
+                    <Text style={{ color: colors.textDim, fontSize: 14, fontWeight: '500' }}>正在停止…</Text>
                   </>
                 ) : (
                   <Icon sf="stop.fill" size={13} color={colors.text} />
                 )}
               </Pressable>
-              {hasText ? (
+              {hasText && !onQueue ? (
                 <Pressable
                   accessibilityRole="button"
-                  accessibilityLabel="Send steer message"
+                  accessibilityLabel="发送引导消息"
                   accessibilityState={{ disabled: !canSteer }}
                   onPress={onSteer}
                   disabled={!canSteer}
@@ -251,7 +286,7 @@ export function Composer({
           ) : (
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Send message"
+              accessibilityLabel="发送消息"
               accessibilityState={{ disabled: !canSend }}
               onPress={onSend}
               disabled={!canSend}
@@ -269,6 +304,19 @@ export function Composer({
             </Pressable>
           )}
         </View>
+        {running && onQueue ? (
+          <View style={{ flexDirection: 'row', gap: 16, flexWrap: 'wrap' }}>
+            <Pressable accessibilityRole="button" accessibilityLabel="加入队列" disabled={!canQueue} onPress={onQueue} style={{ minHeight: 36, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <Icon sf="text.badge.plus" size={16} color={canQueue ? colors.text : colors.textFaint} />
+              <Text style={{ color: canQueue ? colors.text : colors.textFaint, fontSize: 14 }}>加入队列</Text>
+            </Pressable>
+            <Pressable accessibilityRole="button" accessibilityLabel="引导当前任务" disabled={!canSteer} onPress={onSteer} style={{ minHeight: 36, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <Icon sf="arrow.triangle.branch" size={16} color={canSteer ? colors.text : colors.textFaint} />
+              <Text style={{ color: canSteer ? colors.text : colors.textFaint, fontSize: 14 }}>引导当前任务</Text>
+            </Pressable>
+            {sending ? <ActivityIndicator size="small" color={colors.textDim} /> : null}
+          </View>
+        ) : null}
       </View>
     </View>
   );

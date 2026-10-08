@@ -154,7 +154,7 @@ export function SidebarHost({ children }: { children: ReactNode }) {
           <View style={{ position: 'absolute', top: 0, bottom: 0, left: drawerWidth, right: 0 }}>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Close menu"
+              accessibilityLabel="关闭菜单"
               onPress={() => setSidebarOpen(false)}
               style={{ flex: 1 }}
             />

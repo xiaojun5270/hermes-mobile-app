@@ -263,7 +263,7 @@ describe('mcp api — secret-safe errors', () => {
     expect(err).toBeInstanceOf(HttpError);
     expect(err.status).toBe(400);
     expect(err.message).not.toContain('tok-12345');
-    expect(err.message).toBe('The gateway rejected this connector.');
+    expect(err.message).toBe('网关拒绝添加此连接器。');
   });
 
   it('catches the trimmed and Bearer-stripped forms (review focus 1)', async () => {
@@ -279,9 +279,9 @@ describe('mcp api — secret-safe errors', () => {
 
   it('uses a status-specific message, with a generic fallback', async () => {
     const dup = await add(fakeFetch(409, { detail: 'tok-12345' }), 'tok-12345').catch((e) => e);
-    expect(dup.message).toBe('A connector with this name already exists.');
+    expect(dup.message).toBe('已存在同名连接器。');
     const other = await add(fakeFetch(500, { detail: 'tok-12345' }), 'tok-12345').catch((e) => e);
-    expect(other.message).toBe('The gateway returned an error (HTTP 500).');
+    expect(other.message).toBe('网关返回错误（HTTP 500).');
   });
 
   it('cleans install errors that echo any env value', async () => {
@@ -295,7 +295,7 @@ describe('mcp api — secret-safe errors', () => {
     };
     const err = await installMcpCatalogEntry(rest as any, 'asana', { A: 'id-1', B: 'secret-value-9' }).catch((e) => e);
     expect(err).toBeInstanceOf(HttpError);
-    expect(err.message).toBe('The gateway rejected this connector.');
+    expect(err.message).toBe('网关拒绝添加此连接器。');
   });
 
   it('cleans a non-HTTP error too', async () => {
@@ -308,7 +308,7 @@ describe('mcp api — secret-safe errors', () => {
       del: async () => ({}),
     };
     const err = await addMcpServer(rest as any, { name: 'm', url: 'https://x', auth: 'header', bearer_token: 'tok-12345' }).catch((e) => e);
-    expect(err.message).toBe('The request failed.');
+    expect(err.message).toBe('请求失败。');
   });
 
   it('passes AuthError through untouched', async () => {
@@ -326,7 +326,7 @@ describe('mcp api — secret-safe errors', () => {
     };
     const err = await addMcpServer(rest as any, { name: 'm', url: 'https://x', auth: 'header', bearer_token: 'tok-12345' }).catch((e) => e);
     expect(err).toBeInstanceOf(Error);
-    expect(err.message).toBe('The request failed.');
+    expect(err.message).toBe('请求失败。');
     expect(JSON.stringify(err)).not.toContain('tok-12345');
   });
 

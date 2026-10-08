@@ -65,7 +65,7 @@ describe('testMcpServer', () => {
   it('gives a failed test without error text a plain message', async () => {
     const r = recorder({ ok: false, tools: [], oauth_needed: false });
     const out = await testMcpServer(r.call, 'x');
-    expect(out).toEqual({ kind: 'failed', message: 'The connector did not respond.', oauthNeeded: false, tokensPresent: null });
+    expect(out).toEqual({ kind: 'failed', message: '连接器未响应。', oauthNeeded: false, tokensPresent: null });
   });
 
   it('maps a rejected call to error instead of throwing', async () => {
@@ -122,7 +122,7 @@ describe('reloadMcp', () => {
     });
     expect(await reloadMcp(recorder({ status: 'confirm_required' }).call, 's1')).toEqual({
       kind: 'error',
-      message: 'The gateway did not reload.',
+      message: '网关未重新加载。',
     });
   });
 

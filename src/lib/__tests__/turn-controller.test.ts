@@ -121,11 +121,11 @@ describe('request cards (spec §6.0)', () => {
     expect(reduceTurn(m, { type: 'request.answered', id: 'srq-1', skipped: true }).requests[0].status).toBe('skipped');
   });
   it.each([
-    ['interrupted', 'Stopped'],
-    ['timeout', 'Timed out'],
-    ['resolved', 'Answered elsewhere'],
-    ['session_closed', 'Closed'],
-    ['shutdown', 'Closed'],
+    ['interrupted', '已停止'],
+    ['timeout', '已超时'],
+    ['resolved', '已在其他设备回答'],
+    ['session_closed', '已关闭'],
+    ['shutdown', '已关闭'],
   ] as const)('cancel %s → cancelled with label "%s"', (reason, label) => {
     const m = run([{ type: 'request.received', card: card() }, { type: 'request.cancelled', id: 'srq-1', reason }]);
     expect(m.requests[0]).toMatchObject({ status: 'cancelled', cancelReason: reason });
@@ -171,7 +171,7 @@ describe('request cards (spec §6.0)', () => {
       ['srq-timeout', 'cancelled', 'timeout', undefined], // settled: reason kept
       ['legacy:1', 'pending', undefined, undefined], // legacy: socket.lost's job, not this rule
     ]);
-    expect(cancelLabel(m.requests[0].cancelReason!)).toBe('Closed');
+    expect(cancelLabel(m.requests[0].cancelReason!)).toBe('已关闭');
   });
   it('resume.seeded running:false keeps a card the same resume re-delivered (openRequestIds)', () => {
     // The channel delivers the resume's open_requests BEFORE the resume promise resolves, so the

@@ -32,7 +32,7 @@ export interface SessionMcpTarget {
 }
 
 export const NOT_CONNECTED_MESSAGE =
-  'This needs a connected chat. Go back to the chat, wait for it to connect, then return.';
+  '请先返回会话并等待连接成功，再回来继续。';
 
 /** Build a chat's target. `getCall` and `getSessionId` are read at call time, so a
  * reconnect that swaps the socket, or a session created later, is picked up without

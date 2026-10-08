@@ -32,7 +32,7 @@ function SettledRow({ card }: { card: RequestCardState }) {
         }}
       >
         <ActivityIndicator size="small" color={colors.textDim} />
-        <Text style={{ color: colors.textDim, fontSize: 13.5 }}>Sending…</Text>
+        <Text style={{ color: colors.textDim, fontSize: 13.5 }}>正在发送…</Text>
       </View>
     );
   }
@@ -40,16 +40,16 @@ function SettledRow({ card }: { card: RequestCardState }) {
     card.status === 'cancelled'
       ? card.cancelReason
         ? cancelLabel(card.cancelReason)
-        : 'Closed'
+        : '已关闭'
       : card.status === 'skipped'
-        ? 'Skipped'
+        ? '已跳过'
         : card.resolution
-          ? `Answered: ${card.resolution}`
-          : 'Answered';
+          ? `已回答：${card.resolution}`
+          : '已回答';
   const answered = card.status === 'answered';
   return (
     <View
-      accessibilityLabel={`Question ${label}`}
+      accessibilityLabel={`问题 ${label}`}
       style={{
         flexDirection: 'row',
         alignItems: 'center',
@@ -94,7 +94,7 @@ function QuestionBlock(props: {
   const { colors } = useTheme();
   const inputRef = useRef<TextInput>(null);
   const n = index + 1;
-  const forQ = batch ? ` for question ${n}` : '';
+  const forQ = batch ? `，问题 ${n}` : '';
   // Batch questions keep their number in every state (V5).
   const heading = `${batch ? `${n}. ` : ''}${q.question}`;
   if (settled && !locked) {
@@ -103,7 +103,7 @@ function QuestionBlock(props: {
   if (locked) {
     const label = lockedAnswerLabel(lockedAnswer);
     return (
-      <View accessibilityLabel={`Question ${n} answered: ${label || 'skipped'}`} style={{ gap: 4 }}>
+      <View accessibilityLabel={`问题 ${n}已回答：${label || '已跳过'}`} style={{ gap: 4 }}>
         <Text style={{ color: colors.textDim, fontSize: 14, lineHeight: 20 }}>{heading}</Text>
         <View
           style={{
@@ -121,7 +121,7 @@ function QuestionBlock(props: {
               flexShrink: 1,
             }}
           >
-            {label || 'Skipped'}
+            {label || '已跳过'}
           </Text>
         </View>
       </View>
@@ -147,7 +147,7 @@ function QuestionBlock(props: {
             key={c.label}
             accessibilityRole={q.multiSelect ? 'checkbox' : 'radio'}
             accessibilityState={{ checked: on, disabled }}
-            accessibilityLabel={`${c.label}${c.recommended ? ', recommended' : ''}`}
+            accessibilityLabel={`${c.label}${c.recommended ? '，推荐' : ''}`}
             disabled={disabled}
             onPress={() => onChange(toggleChoice(q, draft, c.label))}
             style={({ pressed }) => ({
@@ -180,7 +180,7 @@ function QuestionBlock(props: {
                   paddingVertical: 1,
                 }}
               >
-                <Text style={{ color: colors.accent, fontSize: 11, fontWeight: '700' }}>Recommended</Text>
+                <Text style={{ color: colors.accent, fontSize: 11, fontWeight: '700' }}>推荐</Text>
               </View>
             ) : null}
           </Pressable>
@@ -193,9 +193,9 @@ function QuestionBlock(props: {
         onFocus={() => onInputFocus?.((cb) => inputRef.current?.measureInWindow(cb))}
         editable={!disabled}
         multiline
-        placeholder={q.choices ? 'Other…' : 'Your answer'}
+        placeholder={q.choices ? '其他…' : '你的回答'}
         placeholderTextColor={colors.placeholder}
-        accessibilityLabel={q.choices ? `Other answer${forQ}` : `Answer${forQ}`}
+        accessibilityLabel={q.choices ? `其他回答${forQ}` : `回答${forQ}`}
         style={{
           color: colors.text,
           backgroundColor: colors.surface,
@@ -218,10 +218,10 @@ function QuestionBlock(props: {
             justifyContent: 'flex-end',
           }}
         >
-          <CardButton label="Skip" a11y={`Skip question ${n}`} onPress={onSkip} disabled={disabled} />
+          <CardButton label="跳过" a11y={`跳过问题 ${n}`} onPress={onSkip} disabled={disabled} />
           <CardButton
-            label="Confirm"
-            a11y={`Confirm answer to question ${n}`}
+            label="确认"
+            a11y={`确认问题的回答 ${n}`}
             onPress={() => answer !== null && onConfirm(answer)}
             disabled={disabled || answer === null}
           />
@@ -257,7 +257,7 @@ export function ClarifyCard({
     setNote(null);
     const out = await responder.clarifyLock(card, qid, answer);
     setBusy(false);
-    if (out === 'failed') setNote({ text: "Couldn't send that answer. Try again.", openOnly: true });
+    if (out === 'failed') setNote({ text: '无法发送回答，请重试。', openOnly: true });
   }
 
   async function submitAll() {
@@ -269,7 +269,7 @@ export function ClarifyCard({
     setNote(null);
     const out = await responder.clarifySubmitAll(card, answers);
     setBusy(false);
-    if (out === 'failed') setNote({ text: "Couldn't send every answer. Try again.", openOnly: true });
+    if (out === 'failed') setNote({ text: '部分回答未能发送，请重试。', openOnly: true });
   }
 
   function finish(result: { ok: true } | { ok: false; message: string }) {
@@ -307,12 +307,12 @@ export function ClarifyCard({
   // cancel-all. Never -32601/-32603, which would withdraw the request for every client.
   if (view === null) {
     return (
-      <View accessibilityLabel="Hermes has a question that can't be shown" style={frame}>
-        {header('Hermes has a question')}
-        <Text style={{ color: colors.textDim, fontSize: 14, lineHeight: 20 }}>{"This request can't be shown."}</Text>
+      <View accessibilityLabel="Hermes 有一个无法显示的问题" style={frame}>
+        {header('Hermes 有一个问题')}
+        <Text style={{ color: colors.textDim, fontSize: 14, lineHeight: 20 }}>{'此请求无法显示。'}</Text>
         {pending ? (
           <View style={{ flexDirection: 'row' }}>
-            <CardButton label="Skip" a11y="Skip this request" onPress={() => finish(responder.clarifySkipAll(card))} flex />
+            <CardButton label="跳过" a11y="跳过此请求" onPress={() => finish(responder.clarifySkipAll(card))} flex />
           </View>
         ) : (
           <SettledRow card={card} />
@@ -324,7 +324,7 @@ export function ClarifyCard({
 
   const first = view.questions[0];
   const singleAnswer = first ? draftAnswer(first, draftOf(first.qid)) : null;
-  const title = view.batch ? `Hermes has ${view.questions.length} questions` : 'Hermes has a question';
+  const title = view.batch ? `Hermes 有 ${view.questions.length}个问题` : 'Hermes 有一个问题';
 
   return (
     <View accessibilityLabel={title} style={frame}>
@@ -349,15 +349,15 @@ export function ClarifyCard({
       {pending ? (
         view.batch ? (
           <View style={{ flexDirection: 'row', gap: 10 }}>
-            <CardButton label="Skip all" a11y="Skip all questions" onPress={() => finish(responder.clarifySkipAll(card))} disabled={busy} flex />
-            <CardButton label="Submit all" a11y="Submit all answers" onPress={() => void submitAll()} disabled={busy} primary flex />
+            <CardButton label="全部跳过" a11y="跳过所有问题" onPress={() => finish(responder.clarifySkipAll(card))} disabled={busy} flex />
+            <CardButton label="全部提交" a11y="提交所有回答" onPress={() => void submitAll()} disabled={busy} primary flex />
           </View>
         ) : (
           <View style={{ flexDirection: 'row', gap: 10 }}>
-            <CardButton label="Skip" a11y="Skip question" onPress={() => finish(responder.clarifySingle(card, ''))} flex />
+            <CardButton label="跳过" a11y="跳过问题" onPress={() => finish(responder.clarifySingle(card, ''))} flex />
             <CardButton
-              label="Send"
-              a11y="Send answer"
+              label="发送"
+              a11y="发送回答"
               onPress={() => singleAnswer !== null && finish(responder.clarifySingle(card, singleAnswer))}
               disabled={singleAnswer === null}
               primary

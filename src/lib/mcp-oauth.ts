@@ -83,13 +83,13 @@ function startFailure(e: unknown): OauthOutcome {
   if (e instanceof HttpError && e.status === 0) {
     return {
       kind: 'error',
-      message: 'The gateway did not answer in time. Trying again may be refused for up to 5 minutes.',
+      message: '网关响应超时，接下来最多 5 分钟内重试可能被拒绝。',
     };
   }
   const mapped = connectorError(e, 'signin');
   if (mapped.kind === 'gone') return { kind: 'error', message: mapped.message, gone: true };
   // AuthError is rethrown before this is reached; the arm only satisfies the type.
-  return { kind: 'error', message: mapped.kind === 'auth' ? 'Session expired.' : mapped.message };
+  return { kind: 'error', message: mapped.kind === 'auth' ? '会话已过期。' : mapped.message };
 }
 
 /** Approved without a tools list in hand: read it once; approval stands even if that read fails. */
@@ -142,10 +142,10 @@ async function signIn(deps: OauthDeps, flow: McpOauthFlow, browser: BrowserState
   // Cancel tapped (or the screen left) while the start request was in flight:
   // never present the browser after that.
   if (deps.isCancelled?.()) return stop(deps, id, { kind: 'cancelled' });
-  if (flow.status === 'error') return stop(deps, id, { kind: 'error', message: flow.error || 'Sign-in failed.' });
+  if (flow.status === 'error') return stop(deps, id, { kind: 'error', message: flow.error || '登录失败。' });
   const url = flow.authorization_url;
   if (flow.status !== 'authorization_required' || !url) {
-    return stop(deps, id, { kind: 'error', message: 'The gateway did not produce a sign-in page. Try again.' });
+    return stop(deps, id, { kind: 'error', message: '网关未提供登录页面，请重试。' });
   }
   const refusal = deps.checkUrl(url);
   if (refusal) return stop(deps, id, { kind: 'error', message: refusal });
@@ -177,7 +177,7 @@ async function signIn(deps: OauthDeps, flow: McpOauthFlow, browser: BrowserState
   for (;;) {
     await deps.sleep(OAUTH_POLL_MS);
     // Not a time limit: without a page there is nothing to wait for.
-    if (browser.openFailed) return stop(deps, id, { kind: 'error', message: 'Could not open the sign-in page.' });
+    if (browser.openFailed) return stop(deps, id, { kind: 'error', message: '无法打开登录页面。' });
     if (browser.closed && !finishing) {
       finishing = true;
       announce(deps, 'finishing'); // shown as soon as he closes the page, even if the next poll fails
@@ -191,7 +191,7 @@ async function signIn(deps: OauthDeps, flow: McpOauthFlow, browser: BrowserState
       if (e instanceof AuthError) throw e; // the caller closes the browser first
       if (e instanceof HttpError && e.status === 404) {
         await closeBrowser(deps, browser);
-        return { kind: 'error', message: 'Sign-in expired. Try again.' }; // the flow is gone: nothing to cancel
+        return { kind: 'error', message: '登录已过期，请重试。' }; // the flow is gone: nothing to cancel
       }
       failedPolls += 1;
     }
@@ -203,11 +203,11 @@ async function signIn(deps: OauthDeps, flow: McpOauthFlow, browser: BrowserState
       }
       if (snap.status === 'error') {
         await closeBrowser(deps, browser);
-        return stop(deps, id, { kind: 'error', message: snap.error || 'Sign-in failed.' });
+        return stop(deps, id, { kind: 'error', message: snap.error || '登录失败。' });
       }
       if (snap.status === 'authorization_required' && snap.authorization_url && snap.authorization_url !== url) {
         await closeBrowser(deps, browser);
-        return stop(deps, id, { kind: 'error', message: 'The gateway restarted the sign-in. Try again.' });
+        return stop(deps, id, { kind: 'error', message: '网关重新启动了登录流程，请重试。' });
       }
     }
 
@@ -217,7 +217,7 @@ async function signIn(deps: OauthDeps, flow: McpOauthFlow, browser: BrowserState
     }
     if (failedPolls >= OAUTH_MAX_FAILED_POLLS) {
       await closeBrowser(deps, browser);
-      return stop(deps, id, { kind: 'error', message: 'Lost contact with the gateway during sign-in.' });
+      return stop(deps, id, { kind: 'error', message: '登录时与网关断开连接。' });
     }
     // Time limits apply only directly after a poll that succeeded, so returning
     // from another app can never cancel a flow that finished in the meantime.
@@ -232,7 +232,7 @@ async function signIn(deps: OauthDeps, flow: McpOauthFlow, browser: BrowserState
     }
     if (deps.now() - startedAt >= OAUTH_TOTAL_LIMIT_MS) {
       await closeBrowser(deps, browser);
-      return stop(deps, id, { kind: 'error', message: 'Sign-in timed out.' });
+      return stop(deps, id, { kind: 'error', message: '登录超时。' });
     }
   }
 }
@@ -256,7 +256,7 @@ export async function runOauthSignIn(deps: OauthDeps): Promise<OauthOutcome> {
     await closeBrowser(deps, browser);
     if (e instanceof AuthError) throw e;
     // A dependency threw. Rule A still holds: do not leave the flow behind.
-    return stop(deps, flow.flow_id, { kind: 'error', message: 'Sign-in failed unexpectedly.' });
+    return stop(deps, flow.flow_id, { kind: 'error', message: '登录意外失败。' });
   }
 }
 
@@ -264,10 +264,10 @@ export async function runOauthSignIn(deps: OauthDeps): Promise<OauthOutcome> {
 export function oauthPhaseLine(phase: OauthPhase): string {
   switch (phase) {
     case 'starting':
-      return 'Starting sign-in…';
+      return '正在开始登录…';
     case 'browser':
-      return 'Waiting for you to finish in the browser…';
+      return '等待你在浏览器中完成登录…';
     case 'finishing':
-      return 'Finishing sign-in…';
+      return '正在完成登录…';
   }
 }

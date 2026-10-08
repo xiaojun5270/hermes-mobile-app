@@ -17,7 +17,7 @@ import {
 } from '@/lib/push';
 
 const REG_STORE_KEY = 'hermes-push-registration';
-export const EAS_INIT_NOTE = 'Run eas init to enable push';
+export const EAS_INIT_NOTE = '需运行 eas init 配置推送通知';
 
 /** Settings-facing registration state (read with getPushStatus). */
 export interface PushStatus {
@@ -59,11 +59,11 @@ function easProjectId(): string | null {
 function softAskPermission(): Promise<boolean> {
   return new Promise((resolve) => {
     Alert.alert(
-      'Enable notifications?',
-      'Hermes can let you know when your agent sends you a message while the app is closed.',
+      '开启通知？',
+      '应用关闭时，Hermes 可在智能体发来消息后通知你。',
       [
-        { text: 'Not now', style: 'cancel', onPress: () => resolve(false) },
-        { text: 'Enable', onPress: () => resolve(true) },
+        { text: '暂不开启', style: 'cancel', onPress: () => resolve(false) },
+        { text: '开启', onPress: () => resolve(true) },
       ],
       { cancelable: true, onDismiss: () => resolve(false) },
     );
@@ -86,17 +86,17 @@ function softAskPermission(): Promise<boolean> {
 async function registerPushImpl(opts: { softAsk: boolean }): Promise<void> {
   try {
     if (Platform.OS === 'web' || !Device.isDevice) {
-      status = { state: 'unavailable', note: 'Push needs a physical device' };
+      status = { state: 'unavailable', note: '推送通知需要真实设备' };
       return;
     }
     if ((await getConnectionMode()) !== 'device') {
       // Password mode has no device identity → no push-token route access.
-      status = { state: 'unavailable', note: 'Push needs QR device pairing' };
+      status = { state: 'unavailable', note: '请先扫码配对设备以使用推送通知' };
       return;
     }
     const deviceId = await getDeviceId();
     if (!deviceId) {
-      status = { state: 'unavailable', note: 'Push needs QR device pairing' };
+      status = { state: 'unavailable', note: '请先扫码配对设备以使用推送通知' };
       return;
     }
     const projectId = easProjectId();
@@ -111,11 +111,11 @@ async function registerPushImpl(opts: { softAsk: boolean }): Promise<void> {
         // App-start path: never prompt, just skip until the next pairing.
         status = perms.canAskAgain
           ? { state: 'idle', canAskAgain: true }
-          : { state: 'denied', note: 'Notifications are off in system settings', canAskAgain: false };
+          : { state: 'denied', note: '系统设置中已关闭通知', canAskAgain: false };
         return;
       }
       if (!perms.canAskAgain) {
-        status = { state: 'denied', note: 'Notifications are off in system settings', canAskAgain: false };
+        status = { state: 'denied', note: '系统设置中已关闭通知', canAskAgain: false };
         return;
       }
       if (!(await softAskPermission())) {
@@ -124,7 +124,7 @@ async function registerPushImpl(opts: { softAsk: boolean }): Promise<void> {
       }
       perms = await Notifications.requestPermissionsAsync();
       if (!perms.granted) {
-        status = { state: 'denied', note: 'Notifications are off in system settings', canAskAgain: false };
+        status = { state: 'denied', note: '系统设置中已关闭通知', canAskAgain: false };
         return;
       }
     }
@@ -156,7 +156,7 @@ async function registerPushImpl(opts: { softAsk: boolean }): Promise<void> {
     // (google-services.json + EAS FCM V1 credentials — see READY.md "Android
     // push setup"), so Android push stays off without breaking login.
     console.warn('push registration skipped:', e instanceof Error ? e.message : e);
-    status = { state: 'error', note: 'Push registration failed — will retry next launch', canAskAgain: true };
+    status = { state: 'error', note: '通知注册失败，下次启动时将重试', canAskAgain: true };
   }
 }
 

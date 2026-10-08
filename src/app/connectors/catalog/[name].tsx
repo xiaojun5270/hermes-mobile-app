@@ -184,7 +184,7 @@ export default function CatalogEntryScreen() {
         return { ok: true };
       }
       if (now) setEntry(now);
-      const stored = Object.keys(env).length > 0 ? ' What you entered may already be stored on the gateway.' : '';
+      const stored = Object.keys(env).length > 0 ? ' 你输入的内容可能已保存到网关。' : '';
       return { ok: false, message: `${mapped.message}${stored}` };
     }
     finish(current);
@@ -206,7 +206,7 @@ export default function CatalogEntryScreen() {
       contentContainerStyle={{ padding: 20, gap: 12, paddingBottom: 40 }}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={colors.textDim} />}
     >
-      <Stack.Screen options={{ title: typeof name === 'string' ? name : 'Connector' }} />
+      <Stack.Screen options={{ title: typeof name === 'string' ? name : '连接器' }} />
 
       {error ? (
         <Text selectable style={{ color: colors.danger, fontSize: 14 }}>
@@ -215,7 +215,7 @@ export default function CatalogEntryScreen() {
       ) : null}
 
       {!loaded ? (
-        <Text style={{ color: colors.textFaint, fontSize: 14, textAlign: 'center', paddingTop: 48 }}>Loading…</Text>
+        <Text style={{ color: colors.textFaint, fontSize: 14, textAlign: 'center', paddingTop: 48 }}>正在加载…</Text>
       ) : entry ? (
         <>
           {entry.description ? (
@@ -223,38 +223,39 @@ export default function CatalogEntryScreen() {
           ) : null}
 
           <Card>
-            <Field label="Address" value={entry.url ?? 'Unknown'} selectable />
+            <Field label="地址" value={entry.url ?? '未知'} selectable />
             <Separator />
-            <Field label="Sign-in" value={catalogAuthLabel(entry)} />
+            <Field label="登录" value={catalogAuthLabel(entry)} />
           </Card>
 
           {source ? (
             <Pressable
               accessibilityRole="link"
-              accessibilityLabel="About this connector"
+              accessibilityLabel="关于此连接器"
               onPress={() => void Linking.openURL(source)}
               style={({ pressed }) => ({ minHeight: 44, justifyContent: 'center', marginHorizontal: 4, opacity: pressed ? 0.5 : 1 })}
             >
-              <Text style={{ color: colors.accent, fontSize: 15 }}>About this connector</Text>
+              <Text style={{ color: colors.accent, fontSize: 15 }}>关于此连接器</Text>
             </Pressable>
           ) : null}
 
           {entry.installed ? (
             <View style={{ gap: 10 }}>
-              <Text style={{ color: colors.textDim, fontSize: 14.5, marginHorizontal: 4 }}>Already added</Text>
-              <CardButton label="Open" a11y="Open connector" onPress={() => openConnector(entry.name)} primary />
+              <Text style={{ color: colors.textDim, fontSize: 14.5, marginHorizontal: 4 }}>已添加</Text>
+              <CardButton label="打开" a11y="打开连接器" onPress={() => openConnector(entry.name)} primary />
             </View>
           ) : (
             <View style={{ gap: 10 }}>
               {oauthBlocked ? (
                 <Text accessibilityLiveRegion="polite" style={{ color: colors.danger, fontSize: 13.5, marginHorizontal: 4 }}>
-                  OAuth sign-in needs the gateway on an https:// address.
+
+                  OAuth 登录需要网关使用 HTTPS 地址。
                 </Text>
               ) : null}
               <ConnectorSecretForm
                 fields={secretFieldsForEntry(entry)}
-                submitLabel="Add connector"
-                busyLabel="Adding… this can take a minute"
+                submitLabel="添加连接器"
+                busyLabel="正在添加，可能需要一分钟…"
                 beforeSubmit={() => !oauthBlocked}
                 onSubmit={(env) => install(entry, env)}
               />
@@ -262,16 +263,16 @@ export default function CatalogEntryScreen() {
           )}
 
           <Text style={{ color: colors.textFaint, fontSize: 12.5, marginHorizontal: 4 }}>
-            Adding lets the agent on your gateway connect to the address above. The agent uses it after a reload
-            (on the Connectors list) or a gateway restart.
+
+            添加后，网关上的智能体可以连接上述地址。重新加载连接器或重启网关后生效。
           </Text>
         </>
       ) : !error ? (
         <View style={{ alignItems: 'center', gap: 14, paddingTop: 96, paddingHorizontal: 32 }}>
           <Icon sf="questionmark.circle" size={44} color={colors.textFaint} />
-          <Text style={{ color: colors.text, fontSize: 18, fontWeight: '600' }}>Not in the catalog</Text>
+          <Text style={{ color: colors.text, fontSize: 18, fontWeight: '600' }}>目录中未找到</Text>
           <Text style={{ color: colors.textDim, fontSize: 14, textAlign: 'center' }}>
-            “{name}” is not in the gateway’s catalog. Pull to refresh.
+            “{name}”不在网关目录中，请下拉刷新。
           </Text>
         </View>
       ) : null}

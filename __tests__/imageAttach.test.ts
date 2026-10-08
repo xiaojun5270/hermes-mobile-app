@@ -84,7 +84,7 @@ describe('buildAttachParams', () => {
   });
 
   it('rejects empty payloads', () => {
-    expect(() => buildAttachParams('s1', { uri: 'file:///t/a.png', base64: '' })).toThrow(/empty/i);
+    expect(() => buildAttachParams('s1', { uri: 'file:///t/a.png', base64: '' })).toThrow(/图片为空/);
   });
 
   it('rejects payloads over the 25 MB decoded cap', () => {

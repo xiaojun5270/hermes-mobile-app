@@ -104,7 +104,7 @@ export function Sidebar({ open, width }: { open: boolean; width: number }) {
       router.replace('/');
       return;
     }
-    setError('Gateway unreachable — check your VPN or Wi-Fi, then pull to retry.');
+    setError('无法连接网关，请检查 VPN 或 Wi-Fi 后下拉重试。');
   }, []);
 
   // Every setter runs in a promise callback, never synchronously on the
@@ -248,7 +248,7 @@ export function Sidebar({ open, width }: { open: boolean; width: number }) {
       router.replace('/');
       return;
     }
-    Alert.alert(`${what} failed`, e instanceof Error ? e.message : 'Gateway unreachable.');
+    Alert.alert(`${what}失败`, e instanceof Error ? e.message : '无法连接网关。');
   }, []);
 
   const toggleArchived = useCallback(
@@ -262,7 +262,7 @@ export function Sidebar({ open, width }: { open: boolean; width: number }) {
         setTotal((t) => Math.max(0, t - 1));
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       } catch (e) {
-        handleActionError(e, showArchived ? 'Unarchive' : 'Archive');
+        handleActionError(e, showArchived ? '取消归档' : '归档');
       }
     },
     [handleActionError, activeProfile, showArchived],
@@ -270,14 +270,14 @@ export function Sidebar({ open, width }: { open: boolean; width: number }) {
 
   const confirmDelete = useCallback(
     (session: SessionSummary) => {
-      const title = session.title?.trim() || session.preview?.trim() || 'this conversation';
+      const title = session.title?.trim() || session.preview?.trim() || '此会话';
       Alert.alert(
-        'Delete conversation?',
-        `“${title}” will be permanently removed from your gateway.`,
+        '删除会话？',
+        `“${title}”将从网关永久删除。`,
         [
-          { text: 'Cancel', style: 'cancel' },
+          { text: '取消', style: 'cancel' },
           {
-            text: 'Delete',
+            text: '删除',
             style: 'destructive',
             onPress: async () => {
               try {
@@ -287,7 +287,7 @@ export function Sidebar({ open, width }: { open: boolean; width: number }) {
                 setTotal((t) => Math.max(0, t - 1));
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
               } catch (e) {
-                handleActionError(e, 'Delete');
+                handleActionError(e, '删除');
               }
             },
           },
@@ -306,7 +306,7 @@ export function Sidebar({ open, width }: { open: boolean; width: number }) {
           prev.map((s) => (s.id === session.id ? { ...s, title: res.title?.trim() || null } : s)),
         );
       } catch (e) {
-        handleActionError(e, 'Rename');
+        handleActionError(e, '重命名');
       }
     },
     [handleActionError, activeProfile],
@@ -317,11 +317,11 @@ export function Sidebar({ open, width }: { open: boolean; width: number }) {
       if (isIOS) {
         // Alert.prompt is iOS-only; Android renders the PromptDialog below.
         Alert.prompt(
-          'Rename conversation',
-          'Leave empty to clear the title.',
+          '重命名会话',
+          '留空可清除标题。',
           [
-            { text: 'Cancel', style: 'cancel' },
-            { text: 'Save', onPress: (value?: string) => void applyRename(session, value ?? '') },
+            { text: '取消', style: 'cancel' },
+            { text: '保存', onPress: (value?: string) => void applyRename(session, value ?? '') },
           ],
           'plain-text',
           session.title ?? '',
@@ -430,7 +430,7 @@ export function Sidebar({ open, width }: { open: boolean; width: number }) {
         </Text>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Settings"
+          accessibilityLabel="设置"
           hitSlop={6}
           onPress={() => pushRoute('/settings')}
           style={({ pressed }) => ({
@@ -466,7 +466,7 @@ export function Sidebar({ open, width }: { open: boolean; width: number }) {
         <TextInput
           value={query}
           onChangeText={setQuery}
-          placeholder="Search"
+          placeholder="搜索会话"
           placeholderTextColor={colors.textFaint}
           autoCapitalize="none"
           autoCorrect={false}
@@ -478,12 +478,12 @@ export function Sidebar({ open, width }: { open: boolean; width: number }) {
       {/* Destinations (hidden while searching to give results room) */}
       {!searching ? (
         <View style={{ paddingHorizontal: 8, paddingBottom: 4 }}>
-          <NavItem icon="bubble.left.and.bubble.right" label="Chats" onPress={newChat} />
-          <NavItem icon="clock.arrow.circlepath" label="Cron jobs" onPress={() => pushRoute('/cron')} />
-          <NavItem icon="books.vertical" label="Memory" onPress={() => pushRoute('/memory')} />
-          <NavItem icon="sparkles" label="Skills" onPress={() => pushRoute('/skills')} />
-          <NavItem icon="powerplug" label="Connectors" onPress={() => pushRoute('/connectors')} />
-          <NavItem icon="cpu" label="Models" onPress={() => pushRoute('/models')} />
+          <NavItem icon="bubble.left.and.bubble.right" label="会话" onPress={newChat} />
+          <NavItem icon="clock.arrow.circlepath" label="定时任务" onPress={() => pushRoute('/cron')} />
+          <NavItem icon="books.vertical" label="记忆" onPress={() => pushRoute('/memory')} />
+          <NavItem icon="sparkles" label="技能" onPress={() => pushRoute('/skills')} />
+          <NavItem icon="powerplug" label="MCP 连接器" onPress={() => pushRoute('/connectors')} />
+          <NavItem icon="cpu" label="模型" onPress={() => pushRoute('/models')} />
         </View>
       ) : null}
 
@@ -492,7 +492,7 @@ export function Sidebar({ open, width }: { open: boolean; width: number }) {
         <View>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={pinState.collapsed ? 'Expand pinned conversations' : 'Collapse pinned conversations'}
+            accessibilityLabel={pinState.collapsed ? '展开置顶会话' : '收起置顶会话'}
             accessibilityState={{ expanded: !pinState.collapsed }}
             onPress={() => setPinsCollapsed(!pinState.collapsed)}
             style={({ pressed }) => ({
@@ -508,7 +508,8 @@ export function Sidebar({ open, width }: { open: boolean; width: number }) {
           >
             <Icon sf={pinState.collapsed ? 'chevron.right' : 'chevron.down'} size={12} color={colors.textFaint} />
             <Text style={{ flex: 1, color: colors.textFaint, fontSize: 13.5, fontWeight: '500' }}>
-              Pinned
+
+              置顶
             </Text>
           </Pressable>
           {!pinState.collapsed ? pinnedSessions.map((session) => (
@@ -540,12 +541,12 @@ export function Sidebar({ open, width }: { open: boolean; width: number }) {
         }}
       >
         <Text style={{ flex: 1, color: colors.textFaint, fontSize: 13.5, fontWeight: '500' }}>
-          {searching ? 'Results' : showArchived ? 'Archived' : 'Recents'}
+          {searching ? '搜索结果' : showArchived ? '已归档' : '最近会话'}
         </Text>
         {profiles.names.length > 1 ? (
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={`Active profile: ${activeProfileLabel(profiles)}. Switch profile`}
+            accessibilityLabel={`当前配置档案：${activeProfileLabel(profiles)}，切换配置档案`}
             hitSlop={8}
             onPress={showProfilePicker}
             style={({ pressed }) => ({
@@ -568,7 +569,7 @@ export function Sidebar({ open, width }: { open: boolean; width: number }) {
         ) : null}
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={showArchived ? 'Show active conversations' : 'Show archived conversations'}
+          accessibilityLabel={showArchived ? '显示未归档会话' : '显示已归档会话'}
           accessibilityState={{ selected: showArchived }}
           hitSlop={8}
           onPress={() => {
@@ -621,7 +622,7 @@ export function Sidebar({ open, width }: { open: boolean; width: number }) {
               onPress={() => openChat(item.session.id)}
               onRename={!showArchived ? () => promptRename(item.session) : undefined}
               onArchive={() => toggleArchived(item.session)}
-              archiveLabel={showArchived ? 'Unarchive' : 'Archive'}
+              archiveLabel={showArchived ? '取消归档' : '归档'}
               onDelete={() => confirmDelete(item.session)}
             />
           )
@@ -631,7 +632,7 @@ export function Sidebar({ open, width }: { open: boolean; width: number }) {
         ListFooterComponent={
           loadingMore || (search.pending && rows.length > 0) ? (
             <Text style={{ color: colors.textFaint, fontSize: 13, textAlign: 'center', padding: 14 }}>
-              {loadingMore ? 'Loading…' : 'Searching…'}
+              {loadingMore ? '正在加载…' : '正在搜索…'}
             </Text>
           ) : null
         }
@@ -640,11 +641,11 @@ export function Sidebar({ open, width }: { open: boolean; width: number }) {
             <Text style={{ color: colors.textFaint, fontSize: 14, paddingHorizontal: 16, paddingTop: 18 }}>
               {searching
                 ? search.pending
-                  ? 'Searching…'
-                  : 'No matches'
+                  ? '正在搜索…'
+                  : '没有匹配结果'
                 : showArchived
-                  ? 'No archived conversations'
-                  : 'No conversations yet'}
+                  ? '暂无归档会话'
+                  : '暂无会话'}
             </Text>
           ) : null
         }
@@ -663,7 +664,7 @@ export function Sidebar({ open, width }: { open: boolean; width: number }) {
       >
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="New chat"
+          accessibilityLabel="新建会话"
           onPress={newChat}
           style={({ pressed }) => ({
             flexDirection: 'row',
@@ -678,7 +679,7 @@ export function Sidebar({ open, width }: { open: boolean; width: number }) {
           })}
         >
           <Icon sf="plus" size={16} color={colors.onInverse} />
-          <Text style={{ color: colors.onInverse, fontSize: 16, fontWeight: '600' }}>New chat</Text>
+          <Text style={{ color: colors.onInverse, fontSize: 16, fontWeight: '600' }}>新建会话</Text>
         </Pressable>
       </View>
 
@@ -687,7 +688,7 @@ export function Sidebar({ open, width }: { open: boolean; width: number }) {
       {!isIOS && renameTarget ? (
         <PromptDialog
           visible
-          title="Rename conversation"
+          title="重命名会话"
           initialValue={renameTarget.title ?? ''}
           onSubmit={(value) => {
             const target = renameTarget;

@@ -14,42 +14,42 @@ function setup(mode: ComposerMode, extra: { value?: string; stagedImageUri?: str
 test('idle with only a staged photo: Send is enabled (review m9)', async () => {
   const { el, handlers } = setup({ kind: 'send', enabled: true }, { stagedImageUri: 'file:///p.jpg' });
   await render(el);
-  await fireEvent.press(screen.getByRole('button', { name: 'Send message' }));
+  await fireEvent.press(screen.getByRole('button', { name: '发送消息' }));
   expect(handlers.onSend).toHaveBeenCalledTimes(1);
-  expect(screen.queryByRole('button', { name: 'Stop response' })).toBeNull();
+  expect(screen.queryByRole('button', { name: '停止回复' })).toBeNull();
 });
 
-test('idle, empty: Send disabled, placeholder "Chat with Hermes"', async () => {
+test('idle, empty: Send disabled, placeholder "与 Hermes 对话"', async () => {
   const { el } = setup({ kind: 'send', enabled: false });
   await render(el);
-  expect(screen.getByRole('button', { name: 'Send message' })).toBeDisabled();
-  expect(screen.getByPlaceholderText('Chat with Hermes')).toBeOnTheScreen();
+  expect(screen.getByRole('button', { name: '发送消息' })).toBeDisabled();
+  expect(screen.getByPlaceholderText('与 Hermes 对话')).toBeOnTheScreen();
 });
 
-test('streaming, empty input: Stop only, placeholder "Steer Hermes…", input editable', async () => {
+test('streaming, empty input: Stop only, placeholder "引导当前任务…", input editable', async () => {
   const { el, handlers } = setup({ kind: 'stop+steer', stopEnabled: true, steerEnabled: false });
   await render(el);
-  expect(screen.getByPlaceholderText('Steer Hermes…').props.editable).toBe(true);
-  expect(screen.queryByRole('button', { name: 'Send steer message' })).toBeNull();
-  await fireEvent.press(screen.getByRole('button', { name: 'Stop response' }));
+  expect(screen.getByPlaceholderText('引导当前任务…').props.editable).toBe(true);
+  expect(screen.queryByRole('button', { name: '发送引导消息' })).toBeNull();
+  await fireEvent.press(screen.getByRole('button', { name: '停止回复' }));
   expect(handlers.onStop).toHaveBeenCalledTimes(1);
 });
 
 test('streaming with text: Stop + steer-send; steer never calls onSend', async () => {
   const { el, handlers } = setup({ kind: 'stop+steer', stopEnabled: true, steerEnabled: true }, { value: 'use tabs' });
   await render(el);
-  await fireEvent.press(screen.getByRole('button', { name: 'Send steer message' }));
+  await fireEvent.press(screen.getByRole('button', { name: '发送引导消息' }));
   expect(handlers.onSteer).toHaveBeenCalledTimes(1);
   expect(handlers.onSend).not.toHaveBeenCalled();
 });
 
-test('stopping: "Stopping…", Stop and steer disabled', async () => {
+test('stopping: "正在停止…", Stop and steer disabled', async () => {
   const { el, handlers } = setup({ kind: 'stop+steer', stopEnabled: false, steerEnabled: false }, { value: 'x' });
   await render(el);
-  expect(screen.getByText('Stopping…')).toBeOnTheScreen();
-  expect(screen.getByRole('button', { name: 'Stopping response' })).toBeDisabled();
-  expect(screen.getByRole('button', { name: 'Send steer message' })).toBeDisabled();
-  await fireEvent.press(screen.getByRole('button', { name: 'Stopping response' }));
+  expect(screen.getByText('正在停止…')).toBeOnTheScreen();
+  expect(screen.getByRole('button', { name: '正在停止回复' })).toBeDisabled();
+  expect(screen.getByRole('button', { name: '发送引导消息' })).toBeDisabled();
+  await fireEvent.press(screen.getByRole('button', { name: '正在停止回复' }));
   expect(handlers.onStop).not.toHaveBeenCalled();
 });
 
@@ -57,14 +57,14 @@ test('stopping: "Stopping…", Stop and steer disabled', async () => {
 test('a staged photo while streaming says it can be sent once the turn finishes', async () => {
   const { el } = setup({ kind: 'stop+steer', stopEnabled: true, steerEnabled: false }, { stagedImageUri: 'file:///p.jpg' });
   await render(el);
-  expect(screen.getByText('Tap Send once Hermes finishes')).toBeOnTheScreen();
+  expect(screen.getByText('本轮结束后可发送这张照片')).toBeOnTheScreen();
   expect(screen.queryByText(/^Sends after/)).toBeNull();
 });
 
 test('not ready: Stop disabled too', async () => {
   const { el } = setup({ kind: 'stop+steer', stopEnabled: true, steerEnabled: false }, { disabled: true });
   await render(el);
-  expect(screen.getByRole('button', { name: 'Stop response' })).toBeDisabled();
+  expect(screen.getByRole('button', { name: '停止回复' })).toBeDisabled();
 });
 
 // ── Re-measure trigger for JS-driven value sets (src/lib/composer-height.ts, Preflight F1) ──────
@@ -78,7 +78,7 @@ const multiLine = 'Actually, use tabs.\nAnd keep the imports sorted.\nThen rerun
 function measured(onChangeText: (t: string) => void = () => {}) {
   const perCommit: unknown[] = [];
   let rendered = false; // `screen` exists only once the first render() returns
-  const minHeight = () => StyleSheet.flatten(screen.getByPlaceholderText('Steer Hermes…').props.style).minHeight;
+  const minHeight = () => StyleSheet.flatten(screen.getByPlaceholderText('引导当前任务…').props.style).minHeight;
   const el = (value: string) => (
     <Profiler id="composer" onRender={() => void (rendered && perCommit.push(minHeight()))}>
       <Composer value={value} mode={running} onChangeText={onChangeText} onSend={() => {}} onStop={() => {}} onSteer={() => {}} />
@@ -109,7 +109,7 @@ test('restoring exactly the text the user had typed still counts as a JS set', a
   let latest = '';
   const m = measured((t) => void (latest = t));
   const view = await render(m.el(''));
-  await fireEvent.changeText(screen.getByPlaceholderText('Steer Hermes…'), 'use tabs');
+  await fireEvent.changeText(screen.getByPlaceholderText('引导当前任务…'), 'use tabs');
   await view.rerender(m.el(latest)); // parent echoes the typed text
   await view.rerender(m.el('')); // steer clears
   m.commits();
@@ -124,7 +124,7 @@ test('a JS-driven clear still gets its follow-up commit (C behaviour kept)', asy
   let latest = '';
   const m = measured((t) => void (latest = t));
   const view = await render(m.el(''));
-  await fireEvent.changeText(screen.getByPlaceholderText('Steer Hermes…'), multiLine);
+  await fireEvent.changeText(screen.getByPlaceholderText('引导当前任务…'), multiLine);
   await view.rerender(m.el(latest));
   m.commits();
   await view.rerender(m.el('')); // send / steer clears
@@ -138,7 +138,7 @@ test('typed text echoed back by the parent never triggers a follow-up commit', a
   let latest = '';
   const m = measured((t) => void (latest = t));
   const view = await render(m.el(''));
-  await fireEvent.changeText(screen.getByPlaceholderText('Steer Hermes…'), multiLine);
+  await fireEvent.changeText(screen.getByPlaceholderText('引导当前任务…'), multiLine);
   m.commits();
   await view.rerender(m.el(latest));
   expect(m.commits()).toHaveLength(1);

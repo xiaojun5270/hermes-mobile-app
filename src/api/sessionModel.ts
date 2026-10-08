@@ -56,7 +56,7 @@ export async function switchSessionModel(
     if (res?.confirm_required) {
       return {
         kind: 'confirm',
-        message: res.confirm_message || res.warning || 'This model may be costly. Switch anyway?',
+        message: res.confirm_message || res.warning || '此模型费用可能较高，仍要切换吗？',
       };
     }
     if (res?.warning && BUSY_RE.test(res.warning)) return { kind: 'busy' };

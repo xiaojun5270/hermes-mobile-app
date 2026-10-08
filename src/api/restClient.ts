@@ -133,12 +133,12 @@ export class RestClient {
           }
         }
       }
-      if (res.status === 401) throw new AuthError('session expired or invalid credentials');
-      if (res.status === 429) throw new HttpError(429, 'rate limited — wait a minute');
+      if (res.status === 401) throw new AuthError('会话已过期或凭据无效，请重新连接。');
+      if (res.status === 429) throw new HttpError(429, '请求过于频繁，请稍后重试。');
       if (!res.ok) {
         // FastAPI errors carry {"detail": "..."} — surface it (e.g. cron
         // schedule-parse 400s) instead of a bare status code.
-        let message = `HTTP ${res.status} on ${path}`;
+        let message = `请求 ${path} 失败（HTTP ${res.status}）`;
         try {
           const body = (await res.json()) as { detail?: unknown };
           if (typeof body?.detail === 'string' && body.detail) message = body.detail;
@@ -154,7 +154,7 @@ export class RestClient {
       // Detect via the controller's own state (robust to RN/polyfill error
       // shapes). Intentional AuthError/HttpError thrown above pass through.
       if (controller.signal.aborted && !(e instanceof AuthError) && !(e instanceof HttpError)) {
-        throw new HttpError(0, `request timed out after ${timeoutMs / 1000}s`);
+        throw new HttpError(0, `请求超时（${timeoutMs / 1000} 秒）`);
       }
       throw e;
     } finally {

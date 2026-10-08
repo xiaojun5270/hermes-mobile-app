@@ -666,7 +666,7 @@ describe('seedFromResume', () => {
     expect(dispatched).toEqual([{ type: 'resume.seeded', running: false, openRequestIds: ['srq-a'] }]);
   });
 
-  it('returns false and works without onResumed (optional)', () => {
+  it('returns false and works without onResumed（可选）', () => {
     const dispatched: TurnAction[] = [];
     const running = seedFromResume(resume({ running: false }) as any, {
       onLiveSessionId: () => {},

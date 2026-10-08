@@ -33,14 +33,15 @@ export function ConnectorReloadBanner({
         gap: 10,
       }}
     >
-      <Text style={{ color: colors.text, fontSize: 15, fontWeight: '600' }}>The agent doesn’t have your changes yet.</Text>
+      <Text style={{ color: colors.text, fontSize: 15, fontWeight: '600' }}>智能体尚未加载你的修改。</Text>
       <Text style={{ color: colors.textDim, fontSize: 13.5 }}>
-        Reload the gateway’s connectors to apply them now, or they apply when the gateway restarts.
+
+        重新加载连接器后立即生效，或等待网关重启后生效。
       </Text>
       {running ? (
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
           <ActivityIndicator color={colors.textDim} />
-          <Text style={{ color: colors.textDim, fontSize: 14 }}>Reloading…</Text>
+          <Text style={{ color: colors.textDim, fontSize: 14 }}>正在重新加载…</Text>
         </View>
       ) : null}
       {disabledReason && !running ? (
@@ -56,8 +57,8 @@ export function ConnectorReloadBanner({
         </Text>
       ) : null}
       <CardButton
-        label="Reload now"
-        a11y="Reload now"
+        label="立即重新加载"
+        a11y="立即重新加载"
         onPress={onReload}
         disabled={running || disabledReason !== null}
         primary

@@ -108,8 +108,8 @@ export function containsSecret(text: string, values: readonly string[]): boolean
 }
 
 const CLEAN_MESSAGES: Record<number, string> = {
-  400: 'The gateway rejected this connector.',
-  409: 'A connector with this name already exists.',
+  400: '网关拒绝添加此连接器。',
+  409: '已存在同名连接器。',
 };
 
 /** Always a NEW error (AuthError aside): nothing the rejection carried — a `cause`, a
@@ -119,12 +119,12 @@ function cleanError(e: unknown, values: readonly string[]): Error {
   if (e instanceof AuthError) return e; // fixed client-side text, never the gateway's
   if (e instanceof HttpError) {
     const message = containsSecret(e.message, values)
-      ? (CLEAN_MESSAGES[e.status] ?? `The gateway returned an error (HTTP ${e.status}).`)
+      ? (CLEAN_MESSAGES[e.status] ?? `网关返回错误（HTTP ${e.status}).`)
       : e.message;
     return new HttpError(e.status, message);
   }
   // Network failure, non-JSON body, or a throwable that is not an Error: never forward the object.
-  return new Error('The request failed.');
+  return new Error('请求失败。');
 }
 
 /** Run a request that carries secret values; nothing that echoes one may leave this function. */
@@ -171,7 +171,7 @@ export function setMcpServerEnabled(
  * `reason` is that request's own error (a failure to read the list, not of the action). */
 export class McpPreflightError extends Error {
   constructor(readonly reason: unknown) {
-    super('The gateway could not be reached.');
+    super('无法连接网关。');
     this.name = 'McpPreflightError';
   }
 }
@@ -179,7 +179,7 @@ export class McpPreflightError extends Error {
 /** A catalog entry whose name is already configured: installing it again would overwrite it. */
 export class McpAlreadyAddedError extends Error {
   constructor(readonly serverName: string) {
-    super('This connector is already added.');
+    super('此连接器已添加。');
     this.name = 'McpAlreadyAddedError';
   }
 }

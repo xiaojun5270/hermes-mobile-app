@@ -55,7 +55,7 @@ export const SessionRow = memo(function SessionRow({
   pinned,
   onRename,
   onArchive,
-  archiveLabel = 'Archive',
+  archiveLabel = '归档',
   onDelete,
   compact,
 }: {
@@ -69,21 +69,21 @@ export const SessionRow = memo(function SessionRow({
   onRename?: () => void;
   /** When provided, swiping left reveals an Archive/Unarchive action. */
   onArchive?: () => void;
-  archiveLabel?: 'Archive' | 'Unarchive';
+  archiveLabel?: '归档' | '取消归档';
   /** When provided, swiping left reveals a destructive Delete action. */
   onDelete?: () => void;
   /** Sidebar style: a single title line, like the Claude/ChatGPT drawers. */
   compact?: boolean;
 }) {
   const { colors } = useTheme();
-  const title = session.title?.trim() || session.preview?.trim() || 'Untitled conversation';
+  const title = session.title?.trim() || session.preview?.trim() || '未命名会话';
   const preview = session.title?.trim() ? session.preview?.trim() : undefined;
   const swipeable = Boolean(onPin || onRename || onArchive || onDelete);
 
   const row = compact ? (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`Conversation: ${title}`}
+      accessibilityLabel={`会话：${title}`}
       onPress={onPress}
       style={({ pressed }) => ({
         paddingHorizontal: 16,
@@ -101,7 +101,7 @@ export const SessionRow = memo(function SessionRow({
   ) : (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`Conversation: ${title}`}
+      accessibilityLabel={`会话：${title}`}
       onPress={onPress}
       style={({ pressed }) => ({
         paddingHorizontal: 16,
@@ -128,7 +128,7 @@ export const SessionRow = memo(function SessionRow({
         </Text>
       ) : null}
       <Text style={{ color: colors.textFaint, fontSize: 12.5, fontVariant: ['tabular-nums'] }}>
-        {session.message_count} messages
+        {session.message_count} 条消息
       </Text>
     </Pressable>
   );
@@ -145,22 +145,22 @@ export const SessionRow = memo(function SessionRow({
           {onPin ? (
             <SwipeAction
               icon={pinned ? 'pin.slash.fill' : 'pin.fill'}
-              label={pinned ? 'Unpin' : 'Pin'}
+              label={pinned ? '取消置顶' : '置顶'}
               compact={compact}
               background={pinned ? colors.raised : colors.accent}
               tint={pinned ? colors.text : colors.onAccent}
-              accessibilityLabel={`${pinned ? 'Unpin' : 'Pin'} conversation: ${title}`}
+              accessibilityLabel={`${pinned ? '取消置顶' : '置顶'}会话：${title}`}
               onPress={() => { methods.close(); onPin(); }}
             />
           ) : null}
           {onRename ? (
             <SwipeAction
               icon="pencil"
-              label="Rename"
+              label="重命名"
               compact={compact}
               background={colors.raised}
               tint={colors.text}
-              accessibilityLabel={`Rename conversation: ${title}`}
+              accessibilityLabel={`重命名会话：${title}`}
               onPress={() => {
                 methods.close();
                 onRename();
@@ -169,12 +169,12 @@ export const SessionRow = memo(function SessionRow({
           ) : null}
           {onArchive ? (
             <SwipeAction
-              icon={archiveLabel === 'Archive' ? 'archivebox.fill' : 'tray.and.arrow.up.fill'}
+              icon={archiveLabel === '归档' ? 'archivebox.fill' : 'tray.and.arrow.up.fill'}
               label={archiveLabel}
               compact={compact}
               background={colors.accent}
               tint={colors.onAccent}
-              accessibilityLabel={`${archiveLabel} conversation: ${title}`}
+              accessibilityLabel={`${archiveLabel}会话：${title}`}
               onPress={() => {
                 methods.close();
                 onArchive();
@@ -184,11 +184,11 @@ export const SessionRow = memo(function SessionRow({
           {onDelete ? (
             <SwipeAction
               icon="trash.fill"
-              label="Delete"
+              label="删除"
               compact={compact}
               background={colors.danger}
               tint={colors.onDanger}
-              accessibilityLabel={`Delete conversation: ${title}`}
+              accessibilityLabel={`删除会话：${title}`}
               onPress={() => {
                 methods.close();
                 onDelete();

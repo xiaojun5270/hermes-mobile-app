@@ -40,7 +40,7 @@ describe('composerMode', () => {
   });
 });
 
-describe('isApprovalActionable', () => {
+describe('is操作授权Actionable', () => {
   it('0.21.5 approvals are independently actionable', () => {
     let m = recv(initialTurnModel(), card({ id: 'srq-a' }));
     m = recv(m, card({ id: 'srq-b' }));

@@ -117,26 +117,26 @@ describe('validateCustomServer', () => {
   });
 
   it('requires a name without spaces or slashes', () => {
-    expect(validateCustomServer({ ...ok, name: '  ' }).name).toBe('Enter a name.');
-    expect(validateCustomServer({ ...ok, name: 'my server' }).name).toBe('Use a name without spaces or slashes.');
-    expect(validateCustomServer({ ...ok, name: 'a/b' }).name).toBe('Use a name without spaces or slashes.');
+    expect(validateCustomServer({ ...ok, name: '  ' }).name).toBe('请输入名称。');
+    expect(validateCustomServer({ ...ok, name: 'my server' }).name).toBe('名称不能包含空格或斜杠。');
+    expect(validateCustomServer({ ...ok, name: 'a/b' }).name).toBe('名称不能包含空格或斜杠。');
   });
 
   it('requires an http or https URL', () => {
-    expect(validateCustomServer({ ...ok, url: '' }).url).toBe('Enter the server URL.');
-    expect(validateCustomServer({ ...ok, url: 'ftp://x.example' }).url).toBe('Enter a URL that starts with https://');
-    expect(validateCustomServer({ ...ok, url: 'x.example/mcp' }).url).toBe('Enter a URL that starts with https://');
+    expect(validateCustomServer({ ...ok, url: '' }).url).toBe('请输入服务器地址。');
+    expect(validateCustomServer({ ...ok, url: 'ftp://x.example' }).url).toBe('请输入以 https:// 开头的地址。');
+    expect(validateCustomServer({ ...ok, url: 'x.example/mcp' }).url).toBe('请输入以 https:// 开头的地址。');
   });
 
   it('cautions on http but still allows it', () => {
     const issues = validateCustomServer({ ...ok, url: 'http://10.0.0.5:8000/mcp' });
     expect(issues.url).toBeUndefined();
-    expect(issues.caution).toBe('Traffic between your gateway and this server will not be encrypted.');
+    expect(issues.caution).toBe('网关与此服务器之间的通信不会加密。');
     expect(isCustomServerValid(issues)).toBe(true);
   });
 
   it('requires a token for bearer auth only', () => {
-    expect(validateCustomServer({ ...ok, auth: 'header', hasToken: false }).token).toBe('Enter the token.');
+    expect(validateCustomServer({ ...ok, auth: 'header', hasToken: false }).token).toBe('请输入令牌。');
     expect(validateCustomServer({ ...ok, auth: 'header', hasToken: true }).token).toBeUndefined();
     expect(validateCustomServer({ ...ok, auth: 'oauth', hasToken: false }).token).toBeUndefined();
   });
@@ -180,7 +180,7 @@ describe('serverCapabilities (spec §5.3)', () => {
 describe('labels', () => {
   it('authLabel', () => {
     expect(authLabel(server({ auth: 'oauth' }))).toBe('OAuth');
-    expect(authLabel(server({ auth: 'header' }))).toBe('Token');
+    expect(authLabel(server({ auth: 'header' }))).toBe('令牌');
     expect(authLabel(server({ auth: null }))).toBeNull();
     expect(authLabel(server({ auth: 'none' }))).toBeNull();
   });
@@ -207,26 +207,26 @@ describe('statusLine (spec §5.8)', () => {
     expect(statusLine(server())).toBeNull();
   });
   it.each([
-    [row({ status: 'connected', tools: 12 }), 'Connected · 12 tools'],
-    [row({ status: 'connected', tools: 1 }), 'Connected · 1 tool'],
-    [row({ status: 'lazy', tools: 3 }), 'Ready · 3 tools'],
-    [row({ status: 'connecting' }), 'Connecting…'],
-    [row({ status: 'failed' }), 'Failed'],
+    [row({ status: 'connected', tools: 12 }), '已连接 · 12 个工具'],
+    [row({ status: 'connected', tools: 1 }), '已连接 · 1 个工具'],
+    [row({ status: 'lazy', tools: 3 }), '就绪 · 3 个工具'],
+    [row({ status: 'connecting' }), '正在连接…'],
+    [row({ status: 'failed' }), '失败'],
   ])('enabled server: %#', (r, line) => {
     expect(statusLine(server(), r)).toBe(line);
   });
   it('marks a mismatch between the switch and the running gateway', () => {
-    expect(statusLine(server({ enabled: false }), row({ status: 'connected', tools: 2 }))).toBe('Connected · 2 tools · changes after reload');
-    expect(statusLine(server({ enabled: false }), row({ status: 'lazy', tools: 2 }))).toBe('Ready · 2 tools · changes after reload');
-    expect(statusLine(server({ enabled: true }), row({ status: 'disabled' }))).toBe('Off · changes after reload');
-    expect(statusLine(server({ enabled: true }), row({ status: 'configured' }))).toBe('Not loaded yet · changes after reload');
+    expect(statusLine(server({ enabled: false }), row({ status: 'connected', tools: 2 }))).toBe('已连接 · 2 个工具 · 重新加载后生效');
+    expect(statusLine(server({ enabled: false }), row({ status: 'lazy', tools: 2 }))).toBe('就绪 · 2 个工具 · 重新加载后生效');
+    expect(statusLine(server({ enabled: true }), row({ status: 'disabled' }))).toBe('已关闭 · 重新加载后生效');
+    expect(statusLine(server({ enabled: true }), row({ status: 'configured' }))).toBe('尚未加载 · 重新加载后生效');
   });
   it('has no suffix when they agree', () => {
-    expect(statusLine(server({ enabled: false }), row({ status: 'disabled' }))).toBe('Off');
-    expect(statusLine(server({ enabled: false }), row({ status: 'configured' }))).toBe('Not loaded yet');
+    expect(statusLine(server({ enabled: false }), row({ status: 'disabled' }))).toBe('已关闭');
+    expect(statusLine(server({ enabled: false }), row({ status: 'configured' }))).toBe('尚未加载');
   });
   it('tolerates a missing tool count and an unknown status (review focus 5)', () => {
-    expect(statusLine(server(), { ...row(), tools: undefined } as unknown as McpRuntimeRow)).toBe('Connected · 0 tools');
+    expect(statusLine(server(), { ...row(), tools: undefined } as unknown as McpRuntimeRow)).toBe('已连接 · 0 个工具');
     expect(statusLine(server(), { ...row(), status: 'new-state' } as unknown as McpRuntimeRow)).toBeNull();
   });
 });
@@ -236,7 +236,7 @@ describe('connectorError (spec §8)', () => {
     expect(connectorError(new AuthError('x'), 'list')).toEqual({ kind: 'auth' });
   });
   it('a bare 404 on the list or catalog means an unsupported gateway', () => {
-    const msg = "This gateway doesn't support connectors (needs Hermes 0.21.5 or later).";
+    const msg = '此网关不支持连接器，需要 Hermes 0.21.5 或更新版本。';
     expect(connectorError(new HttpError(404, 'Not Found'), 'list')).toEqual({ kind: 'unsupported', message: msg });
     expect(connectorError(new HttpError(404, 'HTTP 404 on /api/mcp/catalog'), 'catalog')).toEqual({ kind: 'unsupported', message: msg });
   });
@@ -248,7 +248,7 @@ describe('connectorError (spec §8)', () => {
   });
   it('a 404 on a server action means the connector is gone', () => {
     for (const action of ['switch', 'remove', 'signin'] as const) {
-      expect(connectorError(new HttpError(404, "Server 'x' not found"), action)).toEqual({ kind: 'gone', message: 'This connector no longer exists.' });
+      expect(connectorError(new HttpError(404, "Server 'x' not found"), action)).toEqual({ kind: 'gone', message: '此连接器已不存在。' });
     }
   });
   it('a 404 on install is the gateway reason', () => {
@@ -257,11 +257,11 @@ describe('connectorError (spec §8)', () => {
   it('a timeout on a write says to check the list first', () => {
     expect(connectorError(new HttpError(0, 'request timed out after 20s'), 'add')).toEqual({
       kind: 'message',
-      message: 'The gateway did not answer in time. Check the list before trying again.',
+      message: '网关响应超时。 请先检查列表再重试。',
     });
     expect(connectorError(new HttpError(0, 'request timed out after 20s'), 'list')).toEqual({
       kind: 'message',
-      message: 'The gateway did not answer in time.',
+      message: '网关响应超时。',
     });
   });
   it('other HTTP errors show the gateway reason', () => {
@@ -271,17 +271,25 @@ describe('connectorError (spec §8)', () => {
   it('replaces a status-only message with plain words', () => {
     expect(connectorError(new HttpError(422, 'HTTP 422 on /api/mcp/servers?profile=p'), 'add')).toEqual({
       kind: 'message',
-      message: 'The gateway could not read this request.',
+      message: '网关无法读取此请求。',
     });
     expect(connectorError(new HttpError(500, 'HTTP 500 on /api/mcp/servers'), 'switch')).toEqual({
       kind: 'message',
-      message: 'The gateway returned an error (HTTP 500).',
+      message: '网关返回错误（HTTP 500).',
     });
+  });
+  it('also classifies localized REST fallbacks without changing server-supplied reasons', () => {
+    expect(connectorError(new HttpError(404, '请求 /api/mcp/catalog 失败（HTTP 404）'), 'catalog').kind).toBe('unsupported');
+    expect(connectorError(new HttpError(422, '请求 /api/mcp/servers 失败（HTTP 422）'), 'add')).toEqual({
+      kind: 'message', message: '网关无法读取此请求。',
+    });
+    const reason = 'OAuth authentication required — no token found.';
+    expect(connectorError(new HttpError(403, reason), 'signin')).toEqual({ kind: 'message', message: reason });
   });
   it('anything else is a network failure', () => {
     expect(connectorError(new TypeError('Network request failed'), 'switch')).toEqual({
       kind: 'message',
-      message: 'Gateway unreachable — check your VPN or Wi-Fi.',
+      message: '无法连接网关，请检查 VPN 或 Wi-Fi。',
     });
     expect(connectorError('boom', 'list').kind).toBe('message');
   });
@@ -302,18 +310,18 @@ describe('checkAuthorizationUrl (rule B, spec §5.6)', () => {
   });
   it('refuses a URL that is not https', () => {
     expect(checkAuthorizationUrl(`http://a.example/authorize?redirect_uri=${cb}`, base)).toBe(
-      'The sign-in address is not HTTPS, so it was not opened.',
+      '登录地址未使用 HTTPS，已阻止打开。',
     );
-    expect(checkAuthorizationUrl('tel:+15551234', base)).toBe('The sign-in address is not HTTPS, so it was not opened.');
+    expect(checkAuthorizationUrl('tel:+15551234', base)).toBe('登录地址未使用 HTTPS，已阻止打开。');
   });
   it('refuses a URL that does not parse', () => {
-    expect(checkAuthorizationUrl('::::', base)).toBe('The gateway returned a sign-in address that is not a valid URL.');
+    expect(checkAuthorizationUrl('::::', base)).toBe('网关返回了无效的登录地址。');
   });
   it('refuses a redirect to another host, another path, or plain http', () => {
     const elsewhere = encodeURIComponent('http://127.0.0.1:9119/api/mcp/oauth/callback/linear');
     const wrongPath = encodeURIComponent('https://hermes.kite-opah.ts.net/other/linear');
     const msg =
-      'The gateway would send the sign-in back to an address this phone cannot reach. Set HERMES_DASHBOARD_PUBLIC_URL on the gateway to https://hermes.kite-opah.ts.net.';
+      '网关的登录回调地址无法由此手机访问，请将网关的 HERMES_DASHBOARD_PUBLIC_URL 设置为 https://hermes.kite-opah.ts.net.';
     expect(checkAuthorizationUrl(`https://a.example/authorize?redirect_uri=${elsewhere}`, base)).toBe(msg);
     expect(checkAuthorizationUrl(`https://a.example/authorize?redirect_uri=${wrongPath}`, base)).toBe(msg);
     expect(checkAuthorizationUrl('https://a.example/authorize?redirect_uri=nonsense', base)).toBe(msg);
@@ -324,7 +332,7 @@ describe('checkAuthorizationUrl (rule B, spec §5.6)', () => {
   });
   it('does not echo credentials from the gateway URL, and keeps a path prefix', () => {
     const msg = checkAuthorizationUrl('https://a.example/authorize?redirect_uri=nonsense', 'https://user:pw@h.example/Hermes/');
-    expect(msg).toContain('to https://h.example/Hermes.');
+    expect(msg).toContain('设置为 https://h.example/Hermes.');
     expect(msg).not.toContain('pw');
   });
   it('accepts a redirect under a gateway path prefix', () => {
@@ -333,7 +341,7 @@ describe('checkAuthorizationUrl (rule B, spec §5.6)', () => {
   });
   it('reports a gateway URL that does not parse', () => {
     expect(checkAuthorizationUrl('https://a.example/authorize?redirect_uri=x', 'nope')).toBe(
-      'The gateway address in this app is not a valid URL.',
+      '应用中配置的网关地址无效。',
     );
   });
   it('gatewaySupportsOauth needs an https gateway URL', () => {
@@ -374,18 +382,18 @@ describe('runtimeRowsByName (spec §5.8)', () => {
 describe('connectorBadges', () => {
   it('lists auth, Local and Plugin in that order', () => {
     expect(connectorBadges(server())).toEqual(['OAuth']);
-    expect(connectorBadges(server({ auth: 'header' }))).toEqual(['Token']);
+    expect(connectorBadges(server({ auth: 'header' }))).toEqual(['令牌']);
     expect(connectorBadges(server({ auth: null }))).toEqual([]);
-    expect(connectorBadges(server({ transport: 'stdio', url: null, command: 'uvx', auth: null }))).toEqual(['Local']);
-    expect(connectorBadges(server({ source: 'plugin', plugin: 'p' }))).toEqual(['OAuth', 'Plugin']);
+    expect(connectorBadges(server({ transport: 'stdio', url: null, command: 'uvx', auth: null }))).toEqual(['本地']);
+    expect(connectorBadges(server({ source: 'plugin', plugin: 'p' }))).toEqual(['OAuth', '插件']);
   });
 });
 
 describe('testSummary', () => {
-  it('counts tools, and prompts and resources only when there are any', () => {
-    expect(testSummary({ tools: [1, 2, 3], prompts: 0, resources: 0 })).toBe('Working · 3 tools');
-    expect(testSummary({ tools: [1], prompts: 2, resources: 1 })).toBe('Working · 1 tool · 2 prompts · 1 resource');
-    expect(testSummary({ tools: [], prompts: 1, resources: 0 })).toBe('Working · 0 tools · 1 prompt');
+  it('counts tools, and 个提示词 and 个资源 only when there are any', () => {
+    expect(testSummary({ tools: [1, 2, 3], prompts: 0, resources: 0 })).toBe('连接正常 · 3 个工具');
+    expect(testSummary({ tools: [1], prompts: 2, resources: 1 })).toBe('连接正常 · 1 个工具 · 2 个提示词 · 1 个资源');
+    expect(testSummary({ tools: [], prompts: 1, resources: 0 })).toBe('连接正常 · 0 个工具 · 1 个提示词');
   });
 });
 
@@ -410,11 +418,11 @@ describe('connectorError — a slow request that was never sent', () => {
   it('a failed fast request is about reaching the gateway: no "check the list", nothing was sent', () => {
     expect(connectorError(new McpPreflightError(new HttpError(0, 'request timed out after 20s')), 'install')).toEqual({
       kind: 'message',
-      message: 'The gateway did not answer in time.',
+      message: '网关响应超时。',
     });
     expect(connectorError(new McpPreflightError(new TypeError('Network request failed')), 'add')).toEqual({
       kind: 'message',
-      message: 'Gateway unreachable — check your VPN or Wi-Fi.',
+      message: '无法连接网关，请检查 VPN 或 Wi-Fi。',
     });
   });
   it('a bare 404 on the fast request means an unsupported gateway', () => {
@@ -423,7 +431,7 @@ describe('connectorError — a slow request that was never sent', () => {
   it('an entry that is already configured says so', () => {
     expect(connectorError(new McpAlreadyAddedError('asana'), 'install')).toEqual({
       kind: 'message',
-      message: 'This connector is already added.',
+      message: '此连接器已添加。',
     });
   });
 });
@@ -462,26 +470,26 @@ describe('helpers for the add forms', () => {
   });
 
   it('catalogAuthLabel', () => {
-    expect(catalogAuthLabel(entry({ auth_type: 'oauth' }))).toBe('OAuth sign-in');
-    expect(catalogAuthLabel(entry({ auth_type: 'none' }))).toBe('No sign-in needed');
-    expect(catalogAuthLabel(entry({ auth_type: '' }))).toBe('No sign-in needed');
+    expect(catalogAuthLabel(entry({ auth_type: 'oauth' }))).toBe('OAuth 登录');
+    expect(catalogAuthLabel(entry({ auth_type: 'none' }))).toBe('无需登录');
+    expect(catalogAuthLabel(entry({ auth_type: '' }))).toBe('无需登录');
     expect(catalogAuthLabel(entry({ auth_type: 'api_key' }))).toBe('api_key');
   });
 
   it('signInLabel says "again" only when the last test saw a token', () => {
-    expect(signInLabel(null)).toBe('Sign in');
-    expect(signInLabel({ kind: 'error', message: 'x' })).toBe('Sign in');
-    expect(signInLabel({ kind: 'ok', tools: [], prompts: 0, resources: 0, tokensPresent: null })).toBe('Sign in');
-    expect(signInLabel({ kind: 'ok', tools: [], prompts: 0, resources: 0, tokensPresent: true })).toBe('Sign in again');
-    expect(signInLabel({ kind: 'failed', message: 'x', oauthNeeded: true, tokensPresent: true })).toBe('Sign in again');
-    expect(signInLabel({ kind: 'failed', message: 'x', oauthNeeded: true, tokensPresent: false })).toBe('Sign in');
+    expect(signInLabel(null)).toBe('登录');
+    expect(signInLabel({ kind: 'error', message: 'x' })).toBe('登录');
+    expect(signInLabel({ kind: 'ok', tools: [], prompts: 0, resources: 0, tokensPresent: null })).toBe('登录');
+    expect(signInLabel({ kind: 'ok', tools: [], prompts: 0, resources: 0, tokensPresent: true })).toBe('重新登录');
+    expect(signInLabel({ kind: 'failed', message: 'x', oauthNeeded: true, tokensPresent: true })).toBe('重新登录');
+    expect(signInLabel({ kind: 'failed', message: 'x', oauthNeeded: true, tokensPresent: false })).toBe('登录');
   });
 
   it('removeConfirmation says what stays on the gateway', () => {
     const c = removeConfirmation('linear');
-    expect(c.title).toBe('Remove linear?');
+    expect(c.title).toBe('移除 linear?');
     expect(c.message).toBe(
-      'The agent stops using it after a reload or a gateway restart. Its sign-in and any stored token stay on the gateway until they are removed there.',
+      '重新加载或重启网关后，智能体将停止使用此连接器。登录信息和令牌仍保留在网关，需在网关上另行删除。',
     );
   });
 
@@ -497,13 +505,13 @@ describe('validateCustomServer — a URL that carries a secret', () => {
   it('cautions on a query string or on credentials in the URL, without blocking', () => {
     const q = validateCustomServer({ ...base, url: 'https://x.example/mcp?api_key=abc' });
     expect(q.url).toBeUndefined();
-    expect(q.caution).toBe('This URL carries a key or credentials. It is stored on the gateway as written and shown in the app.');
-    expect(validateCustomServer({ ...base, url: 'https://user:pw@x.example/mcp' }).caution).toMatch(/carries a key or credentials/);
+    expect(q.caution).toBe('此地址包含密钥或凭据，将原样保存在网关并显示在应用中。');
+    expect(validateCustomServer({ ...base, url: 'https://user:pw@x.example/mcp' }).caution).toMatch(/包含密钥或凭据/);
   });
   it('gives both cautions for an http URL with a key', () => {
     const both = validateCustomServer({ ...base, url: 'http://x.example/mcp?key=1' }).caution ?? '';
-    expect(both).toMatch(/will not be encrypted/);
-    expect(both).toMatch(/carries a key or credentials/);
+    expect(both).toMatch(/不会加密/);
+    expect(both).toMatch(/包含密钥或凭据/);
   });
   it('has no caution for a plain https URL', () => {
     expect(validateCustomServer({ ...base, url: 'https://x.example/mcp' }).caution).toBeUndefined();

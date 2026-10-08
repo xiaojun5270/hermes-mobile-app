@@ -84,7 +84,7 @@ export default function SkillDetailScreen() {
           setError(null);
         })
         .catch((e: unknown) => {
-          handleError(e, 'Gateway unreachable — check your VPN or Wi-Fi, then pull to retry.');
+          handleError(e, '无法连接网关，请检查 VPN 或 Wi-Fi 后下拉重试。');
         })
         .finally(() => {
           setRefreshing(false);
@@ -115,7 +115,7 @@ export default function SkillDetailScreen() {
       setSkill({ ...current, enabled: res.enabled });
     } catch (e) {
       setSkill(current); // revert
-      handleError(e, `Couldn't ${enabling ? 'enable' : 'disable'} “${current.name}” — gateway unreachable.`);
+      handleError(e, `无法${enabling ? '启用' : '停用'}“${current.name}”，无法连接网关。`);
     } finally {
       setBusy(false);
     }
@@ -128,7 +128,7 @@ export default function SkillDetailScreen() {
       contentContainerStyle={{ padding: 20, gap: 12, paddingBottom: 40 }}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={colors.textDim} />}
     >
-      <Stack.Screen options={{ title: typeof name === 'string' ? name : 'Skill' }} />
+      <Stack.Screen options={{ title: typeof name === 'string' ? name : '技能' }} />
 
       {error ? (
         <Text selectable style={{ color: colors.danger, fontSize: 14 }}>
@@ -137,19 +137,19 @@ export default function SkillDetailScreen() {
       ) : null}
 
       {!loaded ? (
-        <Text style={{ color: colors.textFaint, fontSize: 14, textAlign: 'center', paddingTop: 48 }}>Loading…</Text>
+        <Text style={{ color: colors.textFaint, fontSize: 14, textAlign: 'center', paddingTop: 48 }}>正在加载…</Text>
       ) : skill ? (
         <>
           <Card>
             <View
               style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 16, padding: 16, minHeight: 44 }}
             >
-              <Text style={{ color: colors.text, fontSize: 15.5 }}>Enabled</Text>
+              <Text style={{ color: colors.text, fontSize: 15.5 }}>已启用</Text>
               <Switch
                 value={skill.enabled}
                 disabled={busy}
                 onValueChange={() => toggle(skill)}
-                accessibilityLabel={`${skill.name} ${skill.enabled ? 'enabled, double tap to disable' : 'disabled, double tap to enable'}`}
+                accessibilityLabel={`${skill.name} ${skill.enabled ? '已启用，双击停用' : '已停用，双击启用'}`}
                 trackColor={{ true: colors.accent }}
                 hitSlop={8}
               />
@@ -157,7 +157,7 @@ export default function SkillDetailScreen() {
             {skill.category ? (
               <>
                 <Separator />
-                <MetaRow label="Category" value={skill.category} />
+                <MetaRow label="分类" value={skill.category} />
               </>
             ) : null}
           </Card>
@@ -178,16 +178,16 @@ export default function SkillDetailScreen() {
           ) : null}
 
           <Text style={{ color: colors.textFaint, fontSize: 12.5, marginHorizontal: 4 }}>
-            The gateway exposes only a skill’s metadata over its API — to read the full SKILL.md,
-            ask the agent in a chat or open it on the gateway.
+
+            网关 API 仅提供技能元数据。如需阅读完整 SKILL.md，请在会话中询问智能体，或在网关上打开文件。
           </Text>
         </>
       ) : !error ? (
         <View style={{ alignItems: 'center', gap: 14, paddingTop: 96, paddingHorizontal: 32 }}>
           <Icon sf="questionmark.circle" size={44} color={colors.textFaint} />
-          <Text style={{ color: colors.text, fontSize: 18, fontWeight: '600' }}>Skill not found</Text>
+          <Text style={{ color: colors.text, fontSize: 18, fontWeight: '600' }}>未找到技能</Text>
           <Text style={{ color: colors.textDim, fontSize: 14, textAlign: 'center' }}>
-            “{name}” is no longer installed on the gateway. Pull to refresh.
+            “{name}”已从网关卸载，请下拉刷新。
           </Text>
         </View>
       ) : null}

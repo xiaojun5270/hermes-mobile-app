@@ -16,15 +16,15 @@ import { useTheme } from '@/theme';
 export type SubmitResult = { ok: true } | { ok: false; message: string };
 
 const AUTH_NOTES = {
-  cancelled: 'Cancelled. Nothing was sent.',
-  unavailable: 'Set up Face ID or a device passcode to send this.',
-  failed: "Face ID didn't match. Nothing was sent.",
+  cancelled: '已取消，未发送任何内容。',
+  unavailable: '请先设置 Face ID 或设备密码。',
+  failed: 'Face ID 验证失败，未发送任何内容。',
 } as const;
 
 export function ConnectorSecretForm({
   fields,
   submitLabel,
-  busyLabel = 'Adding…',
+  busyLabel = '正在添加…',
   beforeSubmit,
   onSubmit,
   authenticate = confirmWithBiometrics,
@@ -60,13 +60,13 @@ export function ConnectorSecretForm({
     if (beforeSubmit && !beforeSubmit()) return;
     const { env, missing } = collectSecretValues(fields, values);
     if (missing) {
-      setNote(`${missing.label} is required.`);
+      setNote(`${missing.label}不能为空。`);
       return;
     }
     inFlight.current = true;
     setBusy(true);
     if (Object.keys(env).length > 0) {
-      const outcome = await authenticate('Send this to your gateway');
+      const outcome = await authenticate('将此内容发送给你的网关');
       if (!mounted.current) return; // left during the prompt: send nothing
       if (!outcome.ok) {
         inFlight.current = false;
@@ -80,7 +80,7 @@ export function ConnectorSecretForm({
       result = await onSubmit(env);
     } catch {
       // Never show (or keep) what was thrown: it could carry a value.
-      result = { ok: false, message: 'Something went wrong. Check the list before trying again.' };
+      result = { ok: false, message: '出现问题，请先检查列表再重试。' };
     }
     if (!mounted.current) return;
     if (result.ok) {
@@ -98,7 +98,7 @@ export function ConnectorSecretForm({
         <View key={field.key} style={{ gap: 6 }}>
           <Text style={{ color: colors.textDim, fontSize: 13, fontWeight: '600' }}>
             {field.label}
-            {field.required ? '' : ' (optional)'}
+            {field.required ? '' : '（可选）'}
           </Text>
           <TextInput
             value={values[field.key] ?? ''}
@@ -112,7 +112,7 @@ export function ConnectorSecretForm({
             textContentType="none"
             autoComplete="off"
             accessibilityLabel={field.label}
-            placeholder={field.masked ? 'Paste the value' : 'Enter the value'}
+            placeholder={field.masked ? '粘贴内容' : '输入内容'}
             placeholderTextColor={colors.placeholder}
             style={{
               color: colors.text,
@@ -131,7 +131,8 @@ export function ConnectorSecretForm({
       ))}
       {fields.length > 0 ? (
         <Text style={{ color: colors.textFaint, fontSize: 12.5 }}>
-          Sent to your gateway and stored there. The app does not keep it.
+
+          内容发送并保存到你的网关，应用不会保留。
         </Text>
       ) : null}
       {note ? (
@@ -140,9 +141,9 @@ export function ConnectorSecretForm({
         </Text>
       ) : null}
       <CardButton
-        label={busy ? busyLabel : fields.length > 0 ? `${submitLabel} with Face ID` : submitLabel}
+        label={busy ? busyLabel : fields.length > 0 ? `${submitLabel}，先验证 Face ID` : submitLabel}
         a11y={submitLabel}
-        a11yHint={fields.length > 0 ? 'Asks for Face ID first' : undefined}
+        a11yHint={fields.length > 0 ? '先验证 Face ID' : undefined}
         busy={busy}
         onPress={() => void submit()}
         disabled={busy}

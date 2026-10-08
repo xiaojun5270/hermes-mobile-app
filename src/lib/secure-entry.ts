@@ -19,8 +19,8 @@ export function formatCountdown(s: number): string {
 export function countdownA11y(s: number): string {
   const m = Math.floor(s / 60);
   const r = s % 60;
-  const parts = [m ? `${m} minute${m === 1 ? '' : 's'}` : '', r ? `${r} second${r === 1 ? '' : 's'}` : ''].filter(Boolean);
-  return `${parts.join(' ') || '0 seconds'} remaining`;
+  const parts = [m ? `${m} 分钟` : '', r ? `${r} 秒` : ''].filter(Boolean);
+  return `剩余 ${parts.join(' ') || '0 秒'}`;
 }
 
 /** A request's params as a record of unknowns: server data is never trusted to match its type (m3). */
@@ -59,7 +59,7 @@ export function provenanceForCard(card: RequestCardState, lookup: SkillsLookup |
 }
 
 export function provenanceText(p: ProvenanceLabel): string {
-  return { hub: 'Skills Hub', bundled: 'bundled with Hermes', agent: 'written by the agent', unknown: 'unknown' }[p];
+  return { hub: 'Skills Hub', bundled: 'Hermes 内置', agent: '由智能体编写', unknown: '未知' }[p];
 }
 
 export interface SecureEntryCopy {
@@ -84,10 +84,10 @@ export function secureEntryCopy(card: RequestCardState): SecureEntryCopy | null 
   if (card.method === 'sudo') {
     const p = fields<SudoRequestParams>(card.params);
     return {
-      method: 'sudo', title: 'Administrator password', ask: null, command: text(p.command),
+      method: 'sudo', title: '管理员密码', ask: null, command: text(p.command),
       textContentType: 'password', warning: null, destination: null, skillName: null,
-      fieldLabel: 'Administrator password', placeholder: 'Password',
-      authReason: 'Send the administrator password to Hermes',
+      fieldLabel: '管理员密码', placeholder: '密码',
+      authReason: '将管理员密码发送给 Hermes',
     };
   }
   const p = fields<SecretRequestParams>(card.params);
@@ -95,15 +95,15 @@ export function secureEntryCopy(card: RequestCardState): SecureEntryCopy | null 
   if (!envVar) return null;
   return {
     method: 'secret',
-    title: `Value for ${envVar}`,
+    title: `输入 ${envVar}`,
     ask: text(p.prompt),
     command: null,
     textContentType: 'none', // never offer to save an API key to Passwords (review m14)
-    warning: "Only continue if you asked for this — the agent can write or edit the skill that's asking.",
-    destination: "Saved to the gateway's .env — the agent can read it.",
+    warning: '仅在你主动要求此操作时继续。智能体可以编写或修改发起请求的技能。',
+    destination: '内容将保存到网关的 .env 文件，智能体可以读取。',
     skillName: skillNameOf(card.params),
-    fieldLabel: `Value for ${envVar}`,
-    placeholder: 'Paste or type the value',
-    authReason: `Send ${envVar} to Hermes`,
+    fieldLabel: `输入 ${envVar}`,
+    placeholder: '粘贴或输入内容',
+    authReason: `发送 ${envVar} 给 Hermes`,
   };
 }

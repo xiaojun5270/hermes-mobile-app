@@ -50,7 +50,7 @@ export function historyToItems(messages: SessionMessage[], nextKey: () => string
       const reasoning = m.role === 'assistant' ? reasoningText(m).slice(0, MAX_TOOL_DETAIL) : '';
       if (!text.trim() && !reasoning.trim()) continue; // drop only if nothing to show
       if (isInterruptClosingRow(m, text, reasoning)) {
-        items.push({ key: nextKey(), role: 'status', text: 'Stopped', marker: 'stopped' });
+        items.push({ key: nextKey(), role: 'status', text: '已停止', marker: 'stopped' });
         continue;
       }
       items.push({

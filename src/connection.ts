@@ -15,7 +15,7 @@ const STORE_KEY = 'hermes-connection';
  * detected). There are no replayable credentials in device mode — the only
  * recovery is `hermes mobile pair` + scanning a fresh QR. */
 export const REPAIR_MESSAGE =
-  'This device’s pairing was revoked or expired. Run `hermes mobile pair` on the gateway and pair again.';
+  '此设备的配对已撤销或过期，请在网关运行 `hermes mobile pair` 后重新配对。';
 
 let jar = new CookieJar();
 let rest: RestClient | null = null;
@@ -65,7 +65,7 @@ function activate(newJar: CookieJar, blob: StoredConnectionV2): void {
 }
 
 export function getRest(): RestClient {
-  if (!rest) throw new Error('not connected — go to the Connect screen');
+  if (!rest) throw new Error('尚未连接，请返回连接页面。');
   return rest;
 }
 

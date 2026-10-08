@@ -16,9 +16,9 @@ import { Alert } from 'react-native';
 export function useDiscardGuard(dirty: boolean, message: string): void {
   const navigation = useNavigation();
   usePreventRemove(dirty, ({ data }) => {
-    Alert.alert('Discard changes?', message, [
-      { text: 'Keep editing', style: 'cancel' },
-      { text: 'Discard', style: 'destructive', onPress: () => navigation.dispatch(data.action) },
+    Alert.alert('放弃修改？', message, [
+      { text: '继续编辑', style: 'cancel' },
+      { text: '放弃修改', style: 'destructive', onPress: () => navigation.dispatch(data.action) },
     ]);
   });
 }

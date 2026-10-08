@@ -29,7 +29,7 @@ export async function testMcpServer(
     if (!res.ok) {
       return {
         kind: 'failed',
-        message: res.error || 'The connector did not respond.',
+        message: res.error || '连接器未响应。',
         oauthNeeded: Boolean(res.oauth_needed),
         tokensPresent,
       };
@@ -65,7 +65,7 @@ export type McpReloadOutcome =
 export async function reloadMcp(call: GatewayClient['call'], sessionId?: string | null): Promise<McpReloadOutcome> {
   try {
     const res = await call('reload.mcp', sessionId ? { session_id: sessionId, confirm: true } : { confirm: true });
-    if (res.status !== 'reloaded') return { kind: 'error', message: res.message || 'The gateway did not reload.' };
+    if (res.status !== 'reloaded') return { kind: 'error', message: res.message || '网关未重新加载。' };
     return { kind: 'reloaded', thisChatOnly: res.turn_isolation === true };
   } catch (e) {
     // -1 = no gateway error code: the socket closed or the call timed out before an answer.

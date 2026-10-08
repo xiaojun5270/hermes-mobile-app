@@ -87,7 +87,7 @@ describe('last cancelled sign-in, per connector', () => {
   });
 });
 
-describe('resetConnectorState (a different gateway, or a disconnect)', () => {
+describe('reset连接器State (a different gateway, or a disconnect)', () => {
   it('forgets everything that belonged to the previous gateway', () => {
     let n = 0;
     subscribeMcpChange(() => {

@@ -30,7 +30,7 @@ import { useTheme } from '@/theme';
 
 export { RouteError as ErrorBoundary } from '@/components/route-error';
 
-const RELOAD_NOTE = 'The agent uses changes after a reload or a gateway restart.';
+const RELOAD_NOTE = '重新加载或重启网关后，智能体才会使用修改后的配置。';
 
 export default function ConnectorsScreen() {
   const { colors } = useTheme();
@@ -179,11 +179,11 @@ export default function ConnectorsScreen() {
     if (outcome.kind === 'unknown') {
       setReloadNote({
         tone: 'error',
-        text: 'The connection dropped during the reload, so its result is unknown. Check the status lines.',
+        text: '重新加载时连接中断，结果未确认，请检查连接器状态。',
       });
     } else {
       clearMcpChanged(mark);
-      setReloadNote({ tone: 'info', text: outcome.thisChatOnly ? 'Reloaded for this chat only.' : 'Reloaded.' });
+      setReloadNote({ tone: 'info', text: outcome.thisChatOnly ? '已重新加载，仅对此会话生效。' : '已重新加载。' });
     }
     void fetchList(); // the list and the status lines, as the gateway has them now
   }, [fetchList]);
@@ -196,11 +196,11 @@ export default function ConnectorsScreen() {
       reloadLatch.current = false;
     };
     Alert.alert(
-      'Reload connectors?',
-      'This reconnects every connector for every open chat on the gateway, including a chat that is mid-turn on another device. The next message in each chat re-sends the whole conversation, so it costs more.',
+      '重新加载连接器？',
+      '这会重新连接网关上所有打开会话的连接器，包括其他设备正在运行的会话。各会话下次发送消息时会重新发送完整上下文，费用可能增加。',
       [
-        { text: 'Cancel', style: 'cancel', onPress: release },
-        { text: 'Reload', onPress: () => void runReload() },
+        { text: '取消', style: 'cancel', onPress: release },
+        { text: '重新加载', onPress: () => void runReload() },
       ],
       { onDismiss: release }, // Android: dismissed by tapping outside
     );
@@ -216,22 +216,22 @@ export default function ConnectorsScreen() {
   const mismatch = connected && servers.some((s) => needsReload(s, rows.get(s.name)));
   const showBanner = !unsupported && (pending || mismatch);
   const reloadBlocked = !connected
-    ? 'Reloading needs a connected chat. Go back to the chat, wait for it to connect, then return.'
+    ? '请先返回会话并等待连接成功，再回来重新加载。'
     : target?.streaming
-      ? 'Wait for the chat’s current turn to finish.'
+      ? '请等待当前任务结束。'
       : null;
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
       <Stack.Screen
         options={{
-          title: 'Connectors',
+          title: 'MCP 连接器',
           headerRight: unsupported
             ? undefined
             : () => (
                 <Pressable
                   accessibilityRole="button"
-                  accessibilityLabel="Add connector"
+                  accessibilityLabel="添加连接器"
                   hitSlop={4}
                   onPress={() => router.push('/connectors/add')}
                   style={({ pressed }) => ({ padding: 10, opacity: pressed ? 0.5 : 1 })}
@@ -266,7 +266,7 @@ export default function ConnectorsScreen() {
         ListHeaderComponent={
           <View style={{ gap: 10 }}>
             {profiles.names.length > 1 && profileName && !unsupported ? (
-              <Text style={{ color: colors.textFaint, fontSize: 13, marginHorizontal: 4 }}>Profile: {profileName}</Text>
+              <Text style={{ color: colors.textFaint, fontSize: 13, marginHorizontal: 4 }}>配置档案： {profileName}</Text>
             ) : null}
             {showBanner ? (
               <ConnectorReloadBanner
@@ -297,18 +297,20 @@ export default function ConnectorsScreen() {
             <View style={{ alignItems: 'center', gap: 14, paddingTop: 96, paddingHorizontal: 32 }}>
               <Icon sf="powerplug" size={44} color={colors.textFaint} />
               <Text style={{ color: colors.text, fontSize: 18, fontWeight: '600', textAlign: 'center' }}>
-                Connectors aren’t available
+
+                连接器不可用
               </Text>
               <Text style={{ color: colors.textDim, fontSize: 14, textAlign: 'center' }}>{unsupported}</Text>
             </View>
           ) : loaded && !refreshing && !error ? (
             <View style={{ alignItems: 'center', gap: 14, paddingTop: 96, paddingHorizontal: 32 }}>
               <Icon sf="powerplug" size={44} color={colors.textFaint} />
-              <Text style={{ color: colors.text, fontSize: 18, fontWeight: '600' }}>No connectors yet</Text>
+              <Text style={{ color: colors.text, fontSize: 18, fontWeight: '600' }}>暂无连接器</Text>
               <Text style={{ color: colors.textDim, fontSize: 14, textAlign: 'center' }}>
-                Connectors give the agent on your gateway more tools. Add one from the catalog or by URL.
+
+                连接器可为网关上的智能体提供更多工具，可从目录或通过地址添加。
               </Text>
-              <CardButton label="Add a connector" a11y="Add a connector" onPress={() => router.push('/connectors/add')} primary />
+              <CardButton label="添加连接器" a11y="添加第一个连接器" onPress={() => router.push('/connectors/add')} primary />
             </View>
           ) : null
         }

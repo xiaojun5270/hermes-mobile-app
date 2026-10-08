@@ -17,13 +17,13 @@ export const SearchResultRow = memo(function SearchResultRow({
 }) {
   const { colors } = useTheme();
   const segments = parseSnippet(hit.snippet ?? '');
-  const heading = title?.trim() || 'Conversation';
+  const heading = title?.trim() || '会话';
   const meta = [hit.role, hit.source].filter(Boolean).join(' · ');
 
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`Search result in ${heading}`}
+      accessibilityLabel={`搜索结果所在会话：${heading}`}
       onPress={onPress}
       style={({ pressed }) => ({
         paddingHorizontal: 16,

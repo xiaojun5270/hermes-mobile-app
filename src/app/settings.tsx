@@ -11,12 +11,12 @@ import { useTheme } from '@/theme';
 
 function pushLabel(s: PushStatus): string {
   switch (s.state) {
-    case 'registered': return 'On';
-    case 'denied': return 'Off';
-    case 'no-project-id': return 'Not set up';
-    case 'unavailable': return 'Unavailable';
-    case 'error': return 'Retrying';
-    default: return 'Off';
+    case 'registered': return '已开启';
+    case 'denied': return '已关闭';
+    case 'no-project-id': return '未设置';
+    case 'unavailable': return '不可用';
+    case 'error': return '正在重试';
+    default: return '已关闭';
   }
 }
 
@@ -116,7 +116,7 @@ function PushRow({
 
   const content = (
     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, gap: 16 }}>
-      <Text style={{ color: colors.textDim, fontSize: 15 }}>Notifications</Text>
+      <Text style={{ color: colors.textDim, fontSize: 15 }}>通知</Text>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexShrink: 1 }}>
         {registering ? (
           <ActivityIndicator size="small" color={colors.accent} />
@@ -140,7 +140,7 @@ function PushRow({
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`Notifications: ${label}. Tap to ${push.state === 'denied' && push.canAskAgain === false ? 'open system settings' : 'enable'}`}
+      accessibilityLabel={`通知：${label}，${push.state === 'denied' && push.canAskAgain === false ? '打开系统设置' : '开启通知'}`}
       onPress={onTap}
       disabled={registering}
       style={({ pressed }) => ({
@@ -236,26 +236,26 @@ export default function SettingsScreen() {
       style={{ backgroundColor: colors.bg }}
       contentContainerStyle={{ padding: 20, gap: 20, paddingTop: 28 }}
     >
-      <Text style={{ color: colors.text, fontSize: 22, fontWeight: '700' }}>Settings</Text>
+      <Text style={{ color: colors.text, fontSize: 22, fontWeight: '700' }}>设置</Text>
 
-      <SectionLabel>Connection</SectionLabel>
+      <SectionLabel>连接</SectionLabel>
       <Card>
-        <Row label="Gateway" value={info?.baseUrl ?? '—'} />
+        <Row label="网关" value={info?.baseUrl ?? '—'} />
         {deviceMode ? (
           <>
             <Divider />
-            <Row label="Device" value={info?.deviceId ?? '—'} />
+            <Row label="设备" value={info?.deviceId ?? '—'} />
             <Divider />
             <PushRow push={push} registering={registering} onTap={onNotificationsTap} />
           </>
         ) : (
           <>
             <Divider />
-            <Row label="User" value={info?.username || '—'} />
+            <Row label="用户" value={info?.username || '—'} />
           </>
         )}
         <Divider />
-        <Row label="Version" value={Constants.expoConfig?.version ?? 'dev'} />
+        <Row label="版本" value={Constants.expoConfig?.version ?? 'dev'} />
       </Card>
 
       {deviceMode && push.note && !registering ? (
@@ -264,18 +264,18 @@ export default function SettingsScreen() {
         </Text>
       ) : null}
 
-      <SectionLabel>Control</SectionLabel>
+      <SectionLabel>管理</SectionLabel>
       <Card>
-        <NavRow icon="clock.arrow.circlepath" label="Cron Jobs" href="/cron" />
+        <NavRow icon="clock.arrow.circlepath" label="定时任务" href="/cron" />
         <Divider />
-        <NavRow icon="brain" label="Memory" href="/memory" />
+        <NavRow icon="brain" label="记忆" href="/memory" />
         <Divider />
-        <NavRow icon="sparkles" label="Skills" href="/skills" />
+        <NavRow icon="sparkles" label="技能" href="/skills" />
         <Divider />
-        <NavRow icon="cpu" label="Model" href="/models" />
+        <NavRow icon="cpu" label="模型" href="/models" />
       </Card>
 
-      <SectionLabel>Danger</SectionLabel>
+      <SectionLabel>危险操作</SectionLabel>
       <Pressable
         onPress={onDisconnect}
         style={({ pressed }) => ({
@@ -288,11 +288,12 @@ export default function SettingsScreen() {
           alignItems: 'center',
         })}
       >
-        <Text style={{ color: colors.danger, fontSize: 16, fontWeight: '600' }}>Disconnect</Text>
+        <Text style={{ color: colors.danger, fontSize: 16, fontWeight: '600' }}>断开连接</Text>
       </Pressable>
 
       <Text style={{ color: colors.textFaint, fontSize: 12.5, textAlign: 'center' }}>
-        Unofficial open-source client for hermes-agent.{'\n'}Talks only to your own gateway.
+
+        hermes-agent 的非官方开源客户端。{'\n'}仅连接你自己的网关。
       </Text>
     </ScrollView>
   );

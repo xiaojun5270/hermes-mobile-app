@@ -1,7 +1,7 @@
 // src/lib/tool-context.ts
-// Faithful port of hermes-agent's build_tool_preview (agent/display.py:167-300)
-// so a tool card rehydrated from history shows the same one-line `context` the
-// live `tool.start` event carries. Pure; takes ALREADY-PARSED args (the caller
+// Port of hermes-agent's build_tool_preview (agent/display.py:167-300), with
+// Chinese labels for locally generated summaries; argument/code text stays unchanged.
+// Pure; takes ALREADY-PARSED args (the caller
 // JSON.parses the persisted tool_calls[].function.arguments string). Returns
 // undefined when there's nothing useful to show (gateway returns None).
 
@@ -11,7 +11,7 @@
 // (NOT build_tool_preview's own default of 0/unlimited, which only feeds the
 // chat-completions SSE `label` path in gateway/platforms/api_server.py — a
 // different frontend the mobile app never consumes.) Keep this at 80 so a
-// rehydrated card's context matches the one the live event carried.
+// rehydrated card's argument preview keeps the live event's truncation limit.
 const MAX_LEN = 80;
 
 // display.py:203-214 — tool name → its primary argument key.
@@ -78,8 +78,8 @@ export function toolContextFromArgs(
     if (tasks && Array.isArray(tasks)) {
       const [count, goals] = delegateGoalParts(tasks, 40);
       const preview = goals.length
-        ? `${count} tasks: ${goals.join(' | ')}`
-        : `${tasks.length} parallel tasks`;
+        ? `${count} 个任务：${goals.join(' | ')}`
+        : `${tasks.length} 个并行任务`;
       return truncate(preview, maxLen) || undefined;
     }
     const goal = a.goal;
@@ -104,15 +104,15 @@ export function toolContextFromArgs(
   // todo (display.py:246-254)
   if (toolName === 'todo') {
     const todos = a.todos;
-    if (todos == null) return 'reading task list';
+    if (todos == null) return '读取任务列表';
     const n = Array.isArray(todos) ? todos.length : 0;
-    return a.merge ? `updating ${n} task(s)` : `planning ${n} task(s)`;
+    return a.merge ? `更新 ${n} 个任务` : `规划 ${n} 个任务`;
   }
 
   // session_search (display.py:256-258)
   if (toolName === 'session_search') {
     const query = oneline(a.query == null ? '' : String(a.query));
-    return `recall: "${query.slice(0, 25)}${query.length > 25 ? '...' : ''}"`;
+    return `回忆: "${query.slice(0, 25)}${query.length > 25 ? '...' : ''}"`;
   }
 
   // memory (display.py:260-272)
@@ -124,11 +124,11 @@ export function toolContextFromArgs(
       return `+${target}: "${content.slice(0, 25)}${content.length > 25 ? '...' : ''}"`;
     }
     if (action === 'replace') {
-      const old = oneline(a.old_text ? String(a.old_text) : '') || '<missing old_text>';
+      const old = oneline(a.old_text ? String(a.old_text) : '') || '<缺少 old_text>';
       return `~${target}: "${old.slice(0, 20)}"`;
     }
     if (action === 'remove') {
-      const old = oneline(a.old_text ? String(a.old_text) : '') || '<missing old_text>';
+      const old = oneline(a.old_text ? String(a.old_text) : '') || '<缺少 old_text>';
       return `-${target}: "${old.slice(0, 20)}"`;
     }
     return action || undefined;
@@ -139,7 +139,7 @@ export function toolContextFromArgs(
     const target = a.target == null ? '?' : String(a.target);
     let msg = oneline(a.message == null ? '' : String(a.message));
     if (msg.length > 20) msg = msg.slice(0, 17) + '...';
-    return `to ${target}: "${msg}"`;
+    return `发送至 ${target}: "${msg}"`;
   }
 
   // Primary-arg map, then fallback order (display.py:281-300).

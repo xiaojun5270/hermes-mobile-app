@@ -121,13 +121,13 @@ function harness(script: Script) {
   return { deps, log, clock: () => t };
 }
 
-const approved = (tools = [{ name: 'search', description: 'Search' }]) => flow({ status: 'approved', tools });
+const approved = (tools = [{ name: 'search', description: '搜索会话' }]) => flow({ status: 'approved', tools });
 
 describe('runOauthSignIn — the normal path', () => {
   it('opens the URL, polls, and closes the browser on approval', async () => {
     const h = harness({ polls: [flow(), flow(), approved()] });
     const out = await runOauthSignIn(h.deps);
-    expect(out).toEqual({ kind: 'approved', tools: [{ name: 'search', description: 'Search' }] });
+    expect(out).toEqual({ kind: 'approved', tools: [{ name: 'search', description: '搜索会话' }] });
     expect(h.log.opened).toEqual([URL_A]);
     expect(h.log.phases).toEqual(['starting', 'browser']);
     expect(h.log.polls).toBe(3);
@@ -166,13 +166,13 @@ describe('runOauthSignIn — start failures', () => {
 
   it('no URL at start cancels and reports it', async () => {
     const h = harness({ start: flow({ status: 'starting', authorization_url: null }) });
-    expect(await runOauthSignIn(h.deps)).toEqual({ kind: 'error', message: 'The gateway did not produce a sign-in page. Try again.' });
+    expect(await runOauthSignIn(h.deps)).toEqual({ kind: 'error', message: '网关未提供登录页面，请重试。' });
     expect(h.log.cancels).toEqual(['f1']);
   });
 
   it('a URL that fails rule B is not opened and the flow is cancelled', async () => {
-    const h = harness({ checkUrl: () => 'The sign-in address is not HTTPS, so it was not opened.' });
-    expect(await runOauthSignIn(h.deps)).toEqual({ kind: 'error', message: 'The sign-in address is not HTTPS, so it was not opened.' });
+    const h = harness({ checkUrl: () => '登录地址未使用 HTTPS，已阻止打开。' });
+    expect(await runOauthSignIn(h.deps)).toEqual({ kind: 'error', message: '登录地址未使用 HTTPS，已阻止打开。' });
     expect(h.log.opened).toEqual([]);
     expect(h.log.cancels).toEqual(['f1']);
   });
@@ -181,7 +181,7 @@ describe('runOauthSignIn — start failures', () => {
     const h = harness({ start: new HttpError(0, 'request timed out after 45s') });
     expect(await runOauthSignIn(h.deps)).toEqual({
       kind: 'error',
-      message: 'The gateway did not answer in time. Trying again may be refused for up to 5 minutes.',
+      message: '网关响应超时，接下来最多 5 分钟内重试可能被拒绝。',
     });
     expect(h.log.cancels).toEqual([]);
   });
@@ -207,7 +207,7 @@ describe('runOauthSignIn — start failures', () => {
 
   it('a 404 at start means the connector is gone', async () => {
     const h = harness({ start: new HttpError(404, "Server 'linear' not found") });
-    expect(await runOauthSignIn(h.deps)).toEqual({ kind: 'error', message: 'This connector no longer exists.', gone: true });
+    expect(await runOauthSignIn(h.deps)).toEqual({ kind: 'error', message: '此连接器已不存在。', gone: true });
   });
 
   it('an error at start whose cancel answers `approved` is a success', async () => {
@@ -222,12 +222,12 @@ describe('runOauthSignIn — start failures', () => {
 
   it('a timed-out fast request does not warn about a 5-minute refusal: no flow was started', async () => {
     const h = harness({ start: new McpPreflightError(new HttpError(0, 'request timed out after 20s')) });
-    expect(await runOauthSignIn(h.deps)).toEqual({ kind: 'error', message: 'The gateway did not answer in time.' });
+    expect(await runOauthSignIn(h.deps)).toEqual({ kind: 'error', message: '网关响应超时。' });
   });
 
   it('a network failure at start is reported plainly', async () => {
     const h = harness({ start: new TypeError('Network request failed') });
-    expect(await runOauthSignIn(h.deps)).toEqual({ kind: 'error', message: 'Gateway unreachable — check your VPN or Wi-Fi.' });
+    expect(await runOauthSignIn(h.deps)).toEqual({ kind: 'error', message: '无法连接网关，请检查 VPN 或 Wi-Fi。' });
   });
 
   it('AuthError at start passes through', async () => {
@@ -246,14 +246,14 @@ describe('runOauthSignIn — while the browser is open', () => {
 
   it('a changed authorization URL cancels: the open page can no longer complete', async () => {
     const h = harness({ polls: [flow({ authorization_url: 'https://a.example/authorize?state=s2' })] });
-    expect(await runOauthSignIn(h.deps)).toEqual({ kind: 'error', message: 'The gateway restarted the sign-in. Try again.' });
+    expect(await runOauthSignIn(h.deps)).toEqual({ kind: 'error', message: '网关重新启动了登录流程，请重试。' });
     expect(h.log.dismissed).toBe(1);
     expect(h.log.cancels).toEqual(['f1']);
   });
 
   it('a 404 on a poll means the flow expired; there is nothing to cancel', async () => {
     const h = harness({ polls: [new HttpError(404, 'OAuth flow not found or expired')] });
-    expect(await runOauthSignIn(h.deps)).toEqual({ kind: 'error', message: 'Sign-in expired. Try again.' });
+    expect(await runOauthSignIn(h.deps)).toEqual({ kind: 'error', message: '登录已过期，请重试。' });
     expect(h.log.dismissed).toBe(1);
     expect(h.log.cancels).toEqual([]);
   });
@@ -266,7 +266,7 @@ describe('runOauthSignIn — while the browser is open', () => {
 
   it('gives up after 15 failed polls in a row (review focus 4)', async () => {
     const h = harness({ polls: [new TypeError('Network request failed')] });
-    expect(await runOauthSignIn(h.deps)).toEqual({ kind: 'error', message: 'Lost contact with the gateway during sign-in.' });
+    expect(await runOauthSignIn(h.deps)).toEqual({ kind: 'error', message: '登录时与网关断开连接。' });
     expect(h.log.polls).toBe(OAUTH_MAX_FAILED_POLLS);
     expect(h.log.dismissed).toBe(1);
     expect(h.log.cancels).toEqual(['f1']);
@@ -280,7 +280,7 @@ describe('runOauthSignIn — while the browser is open', () => {
 
   it('stops at the 6-minute limit, after a poll', async () => {
     const h = harness({ polls: [flow()] });
-    expect(await runOauthSignIn(h.deps)).toEqual({ kind: 'error', message: 'Sign-in timed out.' });
+    expect(await runOauthSignIn(h.deps)).toEqual({ kind: 'error', message: '登录超时。' });
     expect(h.clock()).toBe(OAUTH_TOTAL_LIMIT_MS);
     expect(h.log.polls).toBe(OAUTH_TOTAL_LIMIT_MS / OAUTH_POLL_MS);
     expect(h.log.dismissed).toBe(1);
@@ -303,7 +303,7 @@ describe('runOauthSignIn — while the browser is open', () => {
 
   it('a browser that cannot open ends with an error and a cancel', async () => {
     const h = harness({ openFails: true });
-    expect(await runOauthSignIn(h.deps)).toEqual({ kind: 'error', message: 'Could not open the sign-in page.' });
+    expect(await runOauthSignIn(h.deps)).toEqual({ kind: 'error', message: '无法打开登录页面。' });
     expect(h.log.cancels).toEqual(['f1']);
     expect(h.log.dismissed).toBe(0);
   });
@@ -325,20 +325,20 @@ describe('runOauthSignIn — a misbehaving browser', () => {
 
   it('an open that answers `locked` is a failure to open, not a closed page', async () => {
     const h = harness({ openResult: { type: 'locked' } });
-    expect(await runOauthSignIn(h.deps)).toEqual({ kind: 'error', message: 'Could not open the sign-in page.' });
+    expect(await runOauthSignIn(h.deps)).toEqual({ kind: 'error', message: '无法打开登录页面。' });
     expect(h.log.phases).toEqual(['starting', 'browser']);
     expect(h.log.cancels).toEqual(['f1']);
   });
 
   it('an open that throws synchronously still cancels the flow', async () => {
     const h = harness({ openThrows: true });
-    expect(await runOauthSignIn(h.deps)).toEqual({ kind: 'error', message: 'Could not open the sign-in page.' });
+    expect(await runOauthSignIn(h.deps)).toEqual({ kind: 'error', message: '无法打开登录页面。' });
     expect(h.log.cancels).toEqual(['f1']);
   });
 
   it('reports a failed open without waiting for a poll to succeed', async () => {
     const h = harness({ openFails: true, polls: [new TypeError('Network request failed')] });
-    expect(await runOauthSignIn(h.deps)).toEqual({ kind: 'error', message: 'Could not open the sign-in page.' });
+    expect(await runOauthSignIn(h.deps)).toEqual({ kind: 'error', message: '无法打开登录页面。' });
     expect(h.log.polls).toBe(0);
     expect(h.log.cancels).toEqual(['f1']);
   });
@@ -349,7 +349,7 @@ describe('runOauthSignIn — a misbehaving browser', () => {
         throw new Error('boom');
       },
     });
-    expect(await runOauthSignIn(h.deps)).toEqual({ kind: 'error', message: 'Sign-in failed unexpectedly.' });
+    expect(await runOauthSignIn(h.deps)).toEqual({ kind: 'error', message: '登录意外失败。' });
     expect(h.log.opened).toEqual([]);
     expect(h.log.cancels).toEqual(['f1']);
   });
@@ -440,8 +440,8 @@ describe('runOauthSignIn — Cancel and leaving the screen', () => {
 
 describe('oauthPhaseLine', () => {
   it('says what is happening in each phase', () => {
-    expect(oauthPhaseLine('starting')).toBe('Starting sign-in…');
-    expect(oauthPhaseLine('browser')).toBe('Waiting for you to finish in the browser…');
-    expect(oauthPhaseLine('finishing')).toBe('Finishing sign-in…');
+    expect(oauthPhaseLine('starting')).toBe('正在开始登录…');
+    expect(oauthPhaseLine('browser')).toBe('等待你在浏览器中完成登录…');
+    expect(oauthPhaseLine('finishing')).toBe('正在完成登录…');
   });
 });

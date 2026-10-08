@@ -12,7 +12,7 @@ beforeEach(() => alertSpy.mockClear());
 
 let dirty = false;
 function Editor() {
-  useDiscardGuard(dirty, 'You have unsaved edits to this file.');
+  useDiscardGuard(dirty, '此文件有尚未保存的修改。');
   return <Text>editor</Text>;
 }
 
@@ -58,20 +58,20 @@ test('clean: the native dismiss is not blocked and back leaves without asking', 
   expect(pathname()).toBe('/');
 });
 
-test('dirty: back asks first; Keep editing stays, Discard leaves', async () => {
+test('dirty: back asks first; 继续编辑 stays, Discard leaves', async () => {
   await openEditor(true);
   await act(async () => router.back());
   expect(alertSpy).toHaveBeenCalledWith(
-    'Discard changes?',
-    'You have unsaved edits to this file.',
+    '放弃修改？',
+    '此文件有尚未保存的修改。',
     expect.any(Array),
   );
   expect(pathname()).toBe('/memory-file');
 
-  await pressAlertButton('Keep editing');
+  await pressAlertButton('继续编辑');
   expect(pathname()).toBe('/memory-file');
 
   await act(async () => router.back());
-  await pressAlertButton('Discard');
+  await pressAlertButton('放弃修改');
   expect(pathname()).toBe('/');
 });

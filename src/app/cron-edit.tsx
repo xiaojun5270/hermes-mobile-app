@@ -5,6 +5,7 @@
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { Alert, Pressable, ScrollView, Switch, Text, TextInput, View } from 'react-native';
+import { scheduleLabel, scheduleWire } from '@/lib/zh-cn';
 import {
   createCronJob,
   deleteCronJob,
@@ -31,7 +32,7 @@ import { useTheme } from '@/theme';
 
 export { RouteError as ErrorBoundary } from '@/components/route-error';
 
-const FALLBACK_TARGETS: DeliveryTarget[] = [{ id: 'local', name: 'Local (save only)' }];
+const FALLBACK_TARGETS: DeliveryTarget[] = [{ id: 'local', name: '本地（仅保存）' }];
 
 function FieldLabel({ children }: { children: string }) {
   const { colors } = useTheme();
@@ -159,7 +160,7 @@ export default function CronEditScreen() {
       } catch (e) {
         if (cancelled) return;
         setLoaded(true);
-        handleError(e, 'Couldn’t load this job — gateway unreachable. Go back and retry.');
+        handleError(e, '无法连接网关，任务加载失败，请返回后重试。');
       }
     })();
     return () => {
@@ -176,7 +177,7 @@ export default function CronEditScreen() {
     try {
       if (!editing) {
         const created = await withAuthRetry((r) =>
-          createCronJob(r, { prompt: prompt.trim(), schedule: schedule.trim(), name: name.trim(), deliver }),
+          createCronJob(r, { prompt: prompt.trim(), schedule: scheduleWire(schedule), name: name.trim(), deliver }),
         );
         if (!enabled) await withAuthRetry((r) => pauseCronJob(r, created.id, created.profile));
       } else if (job) {
@@ -193,7 +194,7 @@ export default function CronEditScreen() {
       router.back();
     } catch (e) {
       // Schedule-parse rejections arrive as 400s with a server `detail`.
-      handleError(e, 'Couldn’t save — gateway unreachable. Check your VPN or Wi-Fi and try again.');
+      handleError(e, '无法连接网关，保存失败，请检查 VPN 或 Wi-Fi 后重试。');
     } finally {
       setBusy(false);
     }
@@ -202,12 +203,12 @@ export default function CronEditScreen() {
   const confirmDelete = useCallback(() => {
     if (!job) return;
     Alert.alert(
-      `Delete “${job.name || job.id}”?`,
-      'The job and its schedule are removed from the gateway. Past run sessions are kept. This cannot be undone.',
+      `删除“${job.name || job.id}”?`,
+      '将从网关删除任务及其计划，保留历史运行会话。此操作无法撤销。',
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: '取消', style: 'cancel' },
         {
-          text: 'Delete',
+          text: '删除',
           style: 'destructive',
           onPress: async () => {
             setBusy(true);
@@ -216,7 +217,7 @@ export default function CronEditScreen() {
               await withAuthRetry((r) => deleteCronJob(r, job.id, job.profile));
               router.back();
             } catch (e) {
-              handleError(e, 'Couldn’t delete — gateway unreachable.');
+              handleError(e, '无法连接网关，删除失败。');
             } finally {
               setBusy(false);
             }
@@ -238,11 +239,11 @@ export default function CronEditScreen() {
     >
       <Stack.Screen
         options={{
-          title: editing ? 'Edit Job' : 'New Job',
+          title: editing ? '编辑任务' : '新建任务',
           headerRight: () => (
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel={editing ? 'Save changes' : 'Create job'}
+              accessibilityLabel={editing ? '保存修改' : '创建任务'}
               accessibilityState={{ disabled: !canSave }}
               disabled={!canSave}
               onPress={save}
@@ -255,7 +256,7 @@ export default function CronEditScreen() {
               })}
             >
               <Text style={{ color: colors.accent, fontSize: 17, fontWeight: '600' }}>
-                {busy ? 'Saving…' : 'Save'}
+                {busy ? '正在保存…' : '保存'}
               </Text>
             </Pressable>
           ),
@@ -269,14 +270,14 @@ export default function CronEditScreen() {
       ) : null}
 
       {!loaded ? (
-        <Text style={{ color: colors.textFaint, fontSize: 14, textAlign: 'center', paddingTop: 48 }}>Loading…</Text>
+        <Text style={{ color: colors.textFaint, fontSize: 14, textAlign: 'center', paddingTop: 48 }}>正在加载…</Text>
       ) : (
         <>
-          <FieldLabel>Name</FieldLabel>
-          <FormInput value={name} onChangeText={setName} placeholder="Morning digest (optional)" label="Job name" />
+          <FieldLabel>名称</FieldLabel>
+          <FormInput value={name} onChangeText={setName} placeholder="早间摘要（可选）" label="任务名称" />
 
           <View style={{ height: 8 }} />
-          <FieldLabel>Schedule</FieldLabel>
+          <FieldLabel>运行计划</FieldLabel>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
             {SCHEDULE_PRESETS.map((preset) => {
               const active = schedule.trim() === preset;
@@ -284,7 +285,7 @@ export default function CronEditScreen() {
                 <Pressable
                   key={preset}
                   accessibilityRole="button"
-                  accessibilityLabel={`Use schedule ${preset}`}
+                  accessibilityLabel={`使用计划 ${scheduleLabel(preset)}`}
                   accessibilityState={{ selected: active }}
                   onPress={() => {
                     setSchedule(preset);
@@ -303,19 +304,19 @@ export default function CronEditScreen() {
                     opacity: pressed ? 0.6 : 1,
                   })}
                 >
-                  <Text style={{ color: active ? colors.accent : colors.textDim, fontSize: 13.5 }}>{preset}</Text>
+                  <Text style={{ color: active ? colors.accent : colors.textDim, fontSize: 13.5 }}>{scheduleLabel(preset)}</Text>
                 </Pressable>
               );
             })}
           </View>
           <FormInput
-            value={schedule}
+            value={scheduleLabel(schedule)}
             onChangeText={(t) => {
               setSchedule(t);
               if (fieldErrors.schedule) setFieldErrors((prev) => ({ ...prev, schedule: undefined }));
             }}
-            placeholder="every day at 9am"
-            label="Schedule"
+            placeholder="运行计划，例如 0 9 * * *"
+            label="运行计划"
             invalid={!!fieldErrors.schedule}
           />
           {fieldErrors.schedule ? (
@@ -327,22 +328,22 @@ export default function CronEditScreen() {
           )}
 
           <View style={{ height: 8 }} />
-          <FieldLabel>Prompt</FieldLabel>
+          <FieldLabel>任务内容</FieldLabel>
           <FormInput
             value={prompt}
             onChangeText={(t) => {
               setPrompt(t);
               if (fieldErrors.prompt) setFieldErrors((prev) => ({ ...prev, prompt: undefined }));
             }}
-            placeholder="What should the agent do on each run?"
-            label="Prompt"
+            placeholder="每次运行需要智能体做什么？"
+            label="任务内容"
             multiline
             invalid={!!fieldErrors.prompt}
           />
           {fieldErrors.prompt ? <FieldError message={fieldErrors.prompt} /> : null}
 
           <View style={{ height: 8 }} />
-          <FieldLabel>Delivery</FieldLabel>
+          <FieldLabel>结果发送方式</FieldLabel>
           <View
             style={{
               backgroundColor: colors.surface,
@@ -361,7 +362,7 @@ export default function CronEditScreen() {
                   {i > 0 ? <View style={{ height: 1, backgroundColor: colors.border, marginLeft: 16 }} /> : null}
                   <Pressable
                     accessibilityRole="button"
-                    accessibilityLabel={`Deliver via ${t.name}`}
+                    accessibilityLabel={`通过以下方式发送：${t.name}`}
                     accessibilityState={{ selected }}
                     onPress={() => setDeliver(t.id)}
                     style={({ pressed }) => ({
@@ -379,7 +380,7 @@ export default function CronEditScreen() {
                       </Text>
                       {unconfigured ? (
                         <Text style={{ color: colors.textFaint, fontSize: 13 }}>
-                          {t.home_env_var ? `Set ${t.home_env_var} on the gateway first.` : 'Not configured on the gateway.'}
+                          {t.home_env_var ? `请在网关配置 ${t.home_env_var} 后再使用。` : '网关尚未配置。'}
                         </Text>
                       ) : null}
                     </View>
@@ -407,11 +408,11 @@ export default function CronEditScreen() {
               minHeight: 44,
             }}
           >
-            <Text style={{ color: colors.text, fontSize: 15.5 }}>Enabled</Text>
+            <Text style={{ color: colors.text, fontSize: 15.5 }}>已启用</Text>
             <Switch
               value={enabled}
               onValueChange={setEnabled}
-              accessibilityLabel={enabled ? 'Job enabled, double tap to pause' : 'Job paused, double tap to enable'}
+              accessibilityLabel={enabled ? '任务已启用，双击暂停' : '任务已暂停，双击启用'}
               trackColor={{ true: colors.accent }}
               hitSlop={8}
             />
@@ -422,7 +423,7 @@ export default function CronEditScreen() {
               <View style={{ height: 16 }} />
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel={`Delete ${job.name || 'job'}`}
+                accessibilityLabel={`删除 ${job.name || '任务'}`}
                 accessibilityState={{ disabled: busy }}
                 disabled={busy}
                 onPress={confirmDelete}
@@ -438,7 +439,7 @@ export default function CronEditScreen() {
                   opacity: busy ? 0.5 : pressed ? 0.7 : 1,
                 })}
               >
-                <Text style={{ color: colors.danger, fontSize: 15.5, fontWeight: '500' }}>Delete Job…</Text>
+                <Text style={{ color: colors.danger, fontSize: 15.5, fontWeight: '500' }}>删除任务…</Text>
               </Pressable>
             </>
           ) : null}

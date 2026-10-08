@@ -18,8 +18,8 @@ test('timeouts: secret 300 s, sudo 120 s, never negative', () => {
 test('countdown text and VoiceOver label', () => {
   expect(formatCountdown(300)).toBe('5:00');
   expect(formatCountdown(61)).toBe('1:01');
-  expect(countdownA11y(61)).toBe('1 minute 1 second remaining');
-  expect(countdownA11y(120)).toBe('2 minutes remaining');
+  expect(countdownA11y(61)).toBe('剩余 1 分钟 1 秒');
+  expect(countdownA11y(120)).toBe('剩余 2 分钟');
 });
 test('skill name and provenance, "unknown" whenever the lookup cannot answer', () => {
   const skills = [{ name: 'weather', description: '', category: '', enabled: true, provenance: 'bundled' as const }];
@@ -30,25 +30,25 @@ test('skill name and provenance, "unknown" whenever the lookup cannot answer', (
   expect(provenanceFor(null, 'weather')).toBe('unknown');
   expect(provenanceFor([{ ...skills[0], provenance: undefined }], 'weather')).toBe('unknown');
   expect(provenanceText('hub')).toBe('Skills Hub');
-  expect(provenanceText('unknown')).toBe('unknown');
+  expect(provenanceText('unknown')).toBe('未知');
 });
 test('secret copy: title, ask, warning, destination, no keychain autofill', () => {
   const c = secureEntryCopy(card('secret', { env_var: 'OPENWEATHER_API_KEY', prompt: 'Your API key', metadata: { skill_name: 'weather' } }));
   expect(c).toMatchObject({
     method: 'secret',
-    title: 'Value for OPENWEATHER_API_KEY',
+    title: '输入 OPENWEATHER_API_KEY',
     ask: 'Your API key',
     command: null,
     textContentType: 'none',
-    warning: "Only continue if you asked for this — the agent can write or edit the skill that's asking.",
-    destination: "Saved to the gateway's .env — the agent can read it.",
+    warning: '仅在你主动要求此操作时继续。智能体可以编写或修改发起请求的技能。',
+    destination: '内容将保存到网关的 .env 文件，智能体可以读取。',
     skillName: 'weather',
-    fieldLabel: 'Value for OPENWEATHER_API_KEY',
+    fieldLabel: '输入 OPENWEATHER_API_KEY',
   });
 });
 test('sudo copy: password autofill, command shown, no warning', () => {
   const c = secureEntryCopy(card('sudo', { command: 'apt-get install jq' }));
-  expect(c).toMatchObject({ method: 'sudo', title: 'Administrator password', ask: null, command: 'apt-get install jq', textContentType: 'password', warning: null, destination: null, fieldLabel: 'Administrator password' });
+  expect(c).toMatchObject({ method: 'sudo', title: '管理员密码', ask: null, command: 'apt-get install jq', textContentType: 'password', warning: null, destination: null, fieldLabel: '管理员密码' });
 });
 
 // Task 11 review I1: provenance is decided per card, so settling a card or a second card arriving
@@ -99,11 +99,11 @@ describe('malformed params (m3)', () => {
 
   test('a secret with a non-string prompt drops the ask; a bad metadata has no skill name', () => {
     const c = secureEntryCopy(raw('secret', { session_id: 's', env_var: 'K', prompt: 3, metadata: 'weather' }));
-    expect(c).toMatchObject({ title: 'Value for K', ask: null, skillName: null });
+    expect(c).toMatchObject({ title: '输入 K', ask: null, skillName: null });
   });
 
   test('sudo needs no params: null or a non-string command shows the card without a command', () => {
-    expect(secureEntryCopy(raw('sudo', null))).toMatchObject({ method: 'sudo', title: 'Administrator password', command: null });
+    expect(secureEntryCopy(raw('sudo', null))).toMatchObject({ method: 'sudo', title: '管理员密码', command: null });
     expect(secureEntryCopy(raw('sudo', { session_id: 's', command: ['rm'] }))).toMatchObject({ command: null });
   });
 

@@ -90,11 +90,11 @@ describe('stop', () => {
     await createTurnCommands(h.deps).stop();
     expect(h.calls).toHaveLength(0);
   });
-  it('no live session id → "Not connected." before dispatching stop.sent (F8)', async () => {
+  it('no live session id → "尚未连接。" before dispatching stop.sent (F8)', async () => {
     const h = harness();
     h.deps.liveSessionId = () => null;
     const out = await createTurnCommands(h.deps).stop();
-    expect(out).toEqual({ ok: false, message: 'Not connected.' });
+    expect(out).toEqual({ ok: false, message: '尚未连接。' });
     expect(h.actions).toEqual([]); // never entered 'stopping'
     expect(h.calls).toHaveLength(0);
     expect(h.timers).toHaveLength(0);
@@ -111,7 +111,7 @@ describe('stop', () => {
     h2.timers[0].fn();
     expect(h2.deps.reconnect).not.toHaveBeenCalled();
   });
-  it('after the stop-timeout reconnect, a turn still "stopping" re-enables Stop (never stuck on Stopping…)', async () => {
+  it('after the stop-timeout reconnect, a turn still "stopping" re-enables Stop (never stuck on 正在停止…)', async () => {
     // A keeps `stopping` on resume.seeded{running:true} (A deviation 6), so if the interrupt never
     // landed the composer would otherwise stay disabled forever.
     const h = harness();

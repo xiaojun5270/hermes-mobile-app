@@ -80,7 +80,7 @@ function ProviderRow({
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`Use ${label} memory backend`}
+      accessibilityLabel={`使用${label}存储记忆`}
       accessibilityState={{ selected, disabled }}
       disabled={disabled}
       onPress={onPress}
@@ -112,11 +112,11 @@ function ProviderRow({
 function EditableFileRow({ file }: { file: MemoryFileInfo }) {
   const { colors } = useTheme();
   const label = isMemoryFileName(file.name) ? memoryFileLabel(file.name) : file.name;
-  const detail = file.exists ? `${formatBytes(file.size)} · ${timeAgo(file.mtime)}` : 'Empty';
+  const detail = file.exists ? `${formatBytes(file.size)} · ${timeAgo(file.mtime)}` : '暂无内容';
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`${label}, ${detail}. Opens the file for viewing and editing.`}
+      accessibilityLabel={`${label}，${detail}，打开文件查看或编辑`}
       onPress={() => router.push({ pathname: '/memory-file', params: { name: file.name } })}
       style={({ pressed }) => ({
         flexDirection: 'row',
@@ -176,9 +176,9 @@ function DangerRow({ label, disabled, onPress }: { label: string; disabled: bool
 }
 
 const RESET_LABELS: Record<MemoryResetTarget, { action: string; detail: string }> = {
-  memory: { action: 'Reset agent memory', detail: 'This permanently deletes MEMORY.md on the gateway.' },
-  user: { action: 'Reset user profile', detail: 'This permanently deletes USER.md on the gateway.' },
-  all: { action: 'Reset all memory', detail: 'This permanently deletes MEMORY.md and USER.md on the gateway.' },
+  memory: { action: '重置智能体记忆', detail: '这将永久删除网关上的 MEMORY.md。' },
+  user: { action: '重置用户档案', detail: '这将永久删除网关上的 USER.md。' },
+  all: { action: '重置全部记忆', detail: '这将永久删除网关上的 MEMORY.md 和 USER.md。' },
 };
 
 type FilesState =
@@ -214,13 +214,13 @@ export default function MemoryScreen() {
       (e): FilesState | null => {
         if (e instanceof AuthError) return null; // status handler redirects
         if (isMemoryPluginMissing(e)) return { kind: 'missing' };
-        return { kind: 'error', message: 'Could not load memory files — pull to retry.' };
+        return { kind: 'error', message: '无法加载记忆文件，请下拉重试。' };
       },
     );
     try {
       setStatus(await withAuthRetry((r) => getMemoryStatus(r)));
     } catch (e) {
-      handleError(e, 'Gateway unreachable — check your VPN or Wi-Fi, then pull to retry.');
+      handleError(e, '无法连接网关，请检查 VPN 或 Wi-Fi 后下拉重试。');
     } finally {
       setRefreshing(false);
       setLoaded(true);
@@ -244,7 +244,7 @@ export default function MemoryScreen() {
       const res = await withAuthRetry((r) => setMemoryProvider(r, provider));
       setStatus({ ...status, active: res.active });
     } catch (e) {
-      handleError(e, `Could not switch to ${providerLabel(provider)}.`);
+      handleError(e, `无法切换到${providerLabel(provider)}。`);
     } finally {
       setBusy(false);
     }
@@ -252,9 +252,9 @@ export default function MemoryScreen() {
 
   function confirmReset(target: MemoryResetTarget) {
     const { action, detail } = RESET_LABELS[target];
-    Alert.alert(`${action}?`, `${detail} This cannot be undone.`, [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: () => doReset(target) },
+    Alert.alert(`${action}?`, `${detail} 此操作无法撤销。`, [
+      { text: '取消', style: 'cancel' },
+      { text: '删除', style: 'destructive', onPress: () => doReset(target) },
     ]);
   }
 
@@ -265,7 +265,7 @@ export default function MemoryScreen() {
       await withAuthRetry((r) => resetMemory(r, target));
       setStatus(await withAuthRetry((r) => getMemoryStatus(r)));
     } catch (e) {
-      handleError(e, 'Reset failed — the gateway did not accept the request.');
+      handleError(e, '重置失败，网关未接受请求。');
     } finally {
       setBusy(false);
     }
@@ -282,7 +282,7 @@ export default function MemoryScreen() {
       contentContainerStyle={{ padding: 20, gap: 12, paddingBottom: 40 }}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={load} tintColor={colors.textDim} />}
     >
-      <Stack.Screen options={{ title: 'Memory' }} />
+      <Stack.Screen options={{ title: '记忆' }} />
 
       {error ? (
         <Text selectable style={{ color: colors.danger, fontSize: 14 }}>
@@ -291,14 +291,14 @@ export default function MemoryScreen() {
       ) : null}
 
       {!loaded ? (
-        <Text style={{ color: colors.textFaint, fontSize: 14, textAlign: 'center', paddingTop: 48 }}>Loading…</Text>
+        <Text style={{ color: colors.textFaint, fontSize: 14, textAlign: 'center', paddingTop: 48 }}>正在加载…</Text>
       ) : status ? (
         <>
-          <SectionTitle>Backend</SectionTitle>
+          <SectionTitle>存储方式</SectionTitle>
           <Card>
             <ProviderRow
-              label="Built-in files"
-              description="Markdown files in the gateway's memories folder."
+              label="内置文件"
+              description="网关 memories 文件夹中的 Markdown 文件。"
               selected={builtinActive}
               disabled={busy}
               onPress={() => selectProvider(BUILT_IN_PROVIDER)}
@@ -308,7 +308,7 @@ export default function MemoryScreen() {
                 <Separator />
                 <ProviderRow
                   label={providerLabel(p.name)}
-                  description={p.configured ? p.description : `${p.description} (not configured)`.trim()}
+                  description={p.configured ? p.description : `${p.description} （未配置）`.trim()}
                   selected={status.active === p.name}
                   disabled={busy}
                   onPress={() => selectProvider(p.name)}
@@ -318,7 +318,7 @@ export default function MemoryScreen() {
           </Card>
 
           <View style={{ height: 8 }} />
-          <SectionTitle>Built-in files</SectionTitle>
+          <SectionTitle>内置文件</SectionTitle>
           {filesState.kind === 'ok' ? (
             <>
               <Card>
@@ -331,23 +331,24 @@ export default function MemoryScreen() {
               </Card>
               <Text style={{ color: colors.textFaint, fontSize: 12.5, marginHorizontal: 4 }}>
                 {filesState.files.every((f) => !f.exists)
-                  ? 'Memory is empty — the agent fills it in as you chat, or tap a file to write it yourself.'
-                  : 'Tap a file to read it or edit it directly.'}
+                  ? '记忆为空，智能体会在对话中填写，也可以打开文件自行编辑。'
+                  : '打开文件即可查看或编辑。'}
               </Text>
             </>
           ) : (
             <>
               <Card>
-                <FileRow label="Agent memory" file="MEMORY.md" size={status.builtin_files.memory} />
+                <FileRow label="智能体记忆" file="MEMORY.md" size={status.builtin_files.memory} />
                 <Separator />
-                <FileRow label="User profile" file="USER.md" size={status.builtin_files.user} />
+                <FileRow label="用户档案" file="USER.md" size={status.builtin_files.user} />
               </Card>
               {filesState.kind === 'missing' ? (
                 <Card>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16, minHeight: 44 }}>
                     <Icon sf="arrow.down.circle" size={22} color={colors.textDim} />
                     <Text style={{ flex: 1, color: colors.textDim, fontSize: 14, lineHeight: 19 }}>
-                      Update the hermes-mobile plugin to edit memory.
+
+                      请更新 hermes-mobile 插件后再编辑记忆。
                     </Text>
                   </View>
                 </Card>
@@ -356,28 +357,29 @@ export default function MemoryScreen() {
               ) : null}
               <Text style={{ color: colors.textFaint, fontSize: 12.5, marginHorizontal: 4 }}>
                 {builtinEmpty
-                  ? 'Memory is empty — the agent fills it in as you chat.'
-                  : 'Ask the agent in a chat to show or update its memory.'}
+                  ? '记忆为空，智能体会在对话中填写。'
+                  : '可在会话中请智能体查看或更新记忆。'}
               </Text>
             </>
           )}
 
           <View style={{ height: 8 }} />
-          <SectionTitle>Danger zone</SectionTitle>
+          <SectionTitle>危险操作</SectionTitle>
           <Card>
-            <DangerRow label="Reset agent memory…" disabled={busy} onPress={() => confirmReset('memory')} />
+            <DangerRow label="重置智能体记忆…" disabled={busy} onPress={() => confirmReset('memory')} />
             <Separator />
-            <DangerRow label="Reset user profile…" disabled={busy} onPress={() => confirmReset('user')} />
+            <DangerRow label="重置用户档案…" disabled={busy} onPress={() => confirmReset('user')} />
             <Separator />
-            <DangerRow label="Reset all memory…" disabled={busy} onPress={() => confirmReset('all')} />
+            <DangerRow label="重置全部记忆…" disabled={busy} onPress={() => confirmReset('all')} />
           </Card>
         </>
       ) : !error ? (
         <View style={{ alignItems: 'center', gap: 14, paddingTop: 96, paddingHorizontal: 32 }}>
           <Icon sf="brain" size={44} color={colors.textFaint} />
-          <Text style={{ color: colors.text, fontSize: 18, fontWeight: '600' }}>Memory unavailable</Text>
+          <Text style={{ color: colors.text, fontSize: 18, fontWeight: '600' }}>记忆不可用</Text>
           <Text style={{ color: colors.textDim, fontSize: 14, textAlign: 'center' }}>
-            The gateway did not return a memory status. Pull to retry.
+
+            网关未返回记忆状态，请下拉重试。
           </Text>
         </View>
       ) : null}

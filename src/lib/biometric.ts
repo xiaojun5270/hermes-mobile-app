@@ -8,7 +8,7 @@ const UNAVAILABLE = new Set(['passcode_not_set', 'not_enrolled', 'not_available'
 
 export async function confirmWithBiometrics(promptMessage: string): Promise<BiometricOutcome> {
   try {
-    const res = await LocalAuthentication.authenticateAsync({ promptMessage, cancelLabel: 'Cancel', disableDeviceFallback: false });
+    const res = await LocalAuthentication.authenticateAsync({ promptMessage, cancelLabel: '取消', disableDeviceFallback: false });
     if (res.success) return { ok: true };
     if (CANCELLED.has(res.error)) return { ok: false, reason: 'cancelled' };
     if (UNAVAILABLE.has(res.error)) return { ok: false, reason: 'unavailable' };

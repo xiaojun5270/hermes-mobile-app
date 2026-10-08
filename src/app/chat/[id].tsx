@@ -3,7 +3,7 @@ import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { ActivityIndicator, AppState, FlatList, Keyboard, Pressable, Share, Text, View, type HostInstance } from 'react-native';
 import Animated, { FadeIn, useAnimatedKeyboard, useAnimatedStyle } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -31,13 +31,14 @@ import { ApprovalCard } from '@/components/approval-card';
 import { ClarifyCard, type ClarifyResponder } from '@/components/clarify-card';
 import { Icon } from '@/components/icon';
 import { Composer } from '@/components/composer';
+import { MessageQueue } from '@/components/message-queue';
 import { MessageRow, type ChatItem, type ToolInfo } from '@/components/message-row';
 import { SecureEntryCard } from '@/components/secure-entry-card';
 import { SubagentMonitorCard } from '@/components/subagent-monitor-card';
 import { ThinkingDots } from '@/components/thinking-dots';
 import { TodoCard } from '@/components/todo-card';
 import { VaultDeclinedNote } from '@/components/vault-declined-note';
-import { mintGatewayUrl, withAuthRetry } from '@/connection';
+import { connectionInfo, mintGatewayUrl, withAuthRetry } from '@/connection';
 import { getProfileState, hydrateProfileStore } from '@/profile-store';
 import { openSidebar } from '@/sidebar-store';
 import { showActionSheet } from '@/lib/action-sheet';
@@ -45,7 +46,11 @@ import { exportAsJsonl, exportAsText } from '@/lib/export';
 import { greetingForHour } from '@/lib/greeting';
 import { historyToItems } from '@/lib/history';
 import { afterKeyboardSettles } from '@/lib/keyboard-settle';
-import { MAX_ATTACH_BYTES, base64ByteLength, buildAttachParams, type PickedImage } from '@/lib/image-attach';
+import { MAX_ATTACH_BYTES, base64ByteLength } from '@/lib/image-attach';
+import { ChatOutbox } from '@/lib/chat-outbox';
+import { ChatJournal } from '@/lib/chat-journal';
+import { journalScope } from '@/lib/outgoing-journal';
+import type { Draft } from '@/lib/outgoing';
 import type { ReconnectOrchestrator, ReconnectPhase } from '@/lib/reconnect-orchestrator';
 import { createRequestResponder, type RequestResponder } from '@/lib/request-answers';
 import type { RequestRegistry } from '@/lib/request-registry';
@@ -65,13 +70,14 @@ import {
   withCardAnchors,
   type CardAnchors,
 } from '@/lib/transcript-rows';
-import { completionEffects, createTurnCommands, restoreSteerText, type TurnCommands } from '@/lib/turn-commands';
+import { completionEffects, createTurnCommands, type TurnCommands } from '@/lib/turn-commands';
 import {
   completeStatus,
   composerMode,
   initialTurnModel,
   isApprovalActionable,
   mergeRequestRows,
+  resumeRunning,
   type RequestCardState,
   type TranscriptRow,
   type TurnAction,
@@ -143,9 +149,13 @@ function HeaderButton({
 type Row = TranscriptRow<ChatItem>;
 
 export default function ChatScreen() {
+  const { id } = useLocalSearchParams<{ id: string }>();
+  return <ChatSession key={id} id={id} />;
+}
+
+function ChatSession({ id }: { id: string }) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { id } = useLocalSearchParams<{ id: string }>();
   const [items, setItems] = useState<ChatItem[]>([]);
   // Every transcript mutation goes through updateItems: the mirror applies it to the latest list and
   // is the request-card anchor at once, so a card never lands above the row that asked for it (M5).
@@ -156,8 +166,10 @@ export default function ChatScreen() {
   // review I1, D1). The pinner records them at the reload and pins them when the reconnect ends.
   const [cardAnchors, setCardAnchors] = useState<CardAnchors>({});
   const [cardPinner] = useState(createCardPinner);
-  const [input, setInput] = useState('');
-  const [stagedImage, setStagedImage] = useState<PickedImage | null>(null);
+  const [outbox] = useState(() => new ChatOutbox());
+  const pending = useSyncExternalStore(outbox.subscribe, outbox.getSnapshot);
+  const input = pending.draft.text;
+  const stagedImage = pending.draft.image;
   const [thinking, setThinking] = useState(false); // sent / turn started, no tokens yet
   const [turn, setTurn] = useState<TurnModel>(initialTurnModel); // server-driven (spec §5.1)
   const [error, setError] = useState<string | null>(null);
@@ -181,6 +193,7 @@ export default function ChatScreen() {
   // Profile target captured at mount — keeps create/resume/history consistent
   // for this chat even if the user switches profiles elsewhere mid-session.
   const profileRef = useRef<string | null>(getProfileState().selected);
+  const scopeRef = useRef<{ gateway: string; identity: string } | null>(null);
   const keyCounter = useRef(0);
   const activeSubagentKeyRef = useRef<string | null>(null);
   const todoKeyRef = useRef<string | null>(null);
@@ -191,6 +204,8 @@ export default function ChatScreen() {
     onPhase: (p: ReconnectPhase) => void;
     onNewCard: (card: RequestCardState, replayed: boolean) => void;
     pinCardsAfterSequence: () => void;
+    accepted: (draft: Draft, status: 'streaming' | 'queued', key: string) => void;
+    pickImage: (source: 'camera' | 'library') => Promise<void>;
   } | null>(null);
 
   const nextKey = () => `i${keyCounter.current++}`;
@@ -207,7 +222,7 @@ export default function ChatScreen() {
     params: RpcMethods[M]['params'],
   ): Promise<RpcMethods[M]['result']> {
     const client = gw();
-    return client ? client.call(method, params) : Promise.reject(new RpcError('Not connected.', -1));
+    return client ? client.call(method, params) : Promise.reject(new RpcError('尚未连接。', -1));
   }
 
   // Stop / steer (spec §5.3). Created once, on first use from a handler (never during render —
@@ -221,7 +236,7 @@ export default function ChatScreen() {
       turnState: () => readTurn().turn,
       // A's transport: session.resume on the stored id, updates liveIdRef + seeds the store.
       resumeStored: () =>
-        transportRef.current?.resumeStored() ?? Promise.reject(new RpcError('Not connected.', -1)),
+        transportRef.current?.resumeStored() ?? Promise.reject(new RpcError('尚未连接。', -1)),
       reconnect: (trigger) => orchestratorRef.current?.reconnect(trigger) ?? Promise.resolve(),
       setTimer: (fn, ms) => {
         const t = setTimeout(fn, ms);
@@ -280,29 +295,32 @@ export default function ChatScreen() {
   }, [pendingSecretIds]);
 
   async function stop() {
+    try { await outbox.pause(); }
+    catch { return; } // Outbox already reports the storage error; don't interrupt before durable pause.
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
     const out = await commands().stop();
     if (!out.ok) setError(out.message);
   }
 
   async function steer() {
-    const text = input.trim();
-    if (!text) return;
-    setInput('');
-    setError(null);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-    const out = await commands().steer(text);
-    if (out.kind === 'error') {
-      setError(out.message);
-      setInput((cur) => restoreSteerText(cur, text));
-      return;
-    }
-    // Close the segment streamed so far first (B1): it stays above the bubble, complete, and the
-    // turn's later deltas open a new segment below it.
-    const row: ChatItem = { key: nextKey(), role: 'user', text, complete: true, ...(out.kind === 'steered' ? { steered: true } : {}) };
+    if (readTurn().turn === 'idle') { outbox.setError('当前任务已空闲，请发送或加入队列。'); return; }
+    await outbox.steer();
+  }
+
+  function accepted(draft: Draft, status: 'streaming' | 'queued', key: string) {
+    if (cancelledRef.current) return;
+    const row: ChatItem = {
+      key: nextKey(), role: 'user', text: draft.text, complete: true,
+      files: draft.files.map((f) => ({ name: f.name, size: f.size })),
+      ...(key.startsWith('steer-') ? { steered: true } : {}),
+      ...(draft.image ? { imageUri: draft.image.uri, imageWidth: draft.image.width, imageHeight: draft.image.height } : {}),
+    };
     updateItems((prev) => appendAfterStream(prev, row));
-    // F10: the fallback was a queued prompt.submit (turn → waiting), so show the dots like send().
-    if (out.kind === 'submitted') setThinking(true);
+    if (status === 'streaming') {
+      dispatchTurn({ type: 'submit.sent' });
+      setThinking(true);
+    }
   }
 
   function append(role: ChatItem['role'], text: string, complete = true) {
@@ -463,7 +481,7 @@ export default function ChatScreen() {
       // A subagent card is NOT sealed here: when the replay ring no longer reaches the turn's
       // anchor, the reconnect keeps the screen and the gap's subagent.* events continue the same
       // card (A1). It is sealed below once we know the turn is over or the reconnect gave up.
-      setReconnectNote(`Connection lost — reconnecting (${p.attempt}/${p.max})…`);
+      setReconnectNote(`连接中断，正在重连（${p.attempt}/${p.max})…`);
     } else if (p.kind === 'ready') {
       pinCardsAfterSequence();
       // A turn that finished while the socket was down never delivers message.complete
@@ -479,7 +497,7 @@ export default function ChatScreen() {
       pinCardsAfterSequence();
       finalizeSubagents(); // gave up: nothing will update the card again
       setReconnectNote(null);
-      setError('Could not reconnect. Check your VPN or Wi-Fi, then reopen this chat.');
+      setError('重连失败，请检查 VPN 或 Wi-Fi 后重新打开会话。');
     }
   }
 
@@ -505,6 +523,7 @@ export default function ChatScreen() {
     switch (e.type) {
       case 'message.start':
         setThinking(true);
+        if (live) void outbox.sync();
         break;
       case 'message.delta':
         appendDelta((e.payload as GatewayEventMap['message.delta'] | undefined)?.text ?? '');
@@ -513,16 +532,29 @@ export default function ChatScreen() {
         const p = e.payload as GatewayEventMap['message.complete'] | undefined;
         const status = completeStatus(p);
         setThinking(false);
-        finishAssistant();
+        updateItems((prev) => {
+          const last = prev[prev.length - 1];
+          const text = typeof p?.text === 'string' ? p.text : '';
+          if (p?.response_previewed || !text?.trim()) return closeStreaming(prev);
+          if (last?.role === 'assistant' && !last.complete) return [...prev.slice(0, -1), { ...last, text, complete: true }];
+          return [...prev, { key: nextKey(), role: 'assistant', text, complete: true }];
+        });
         finalizeSubagents();
         const fx = completionEffects(status, !live);
         if (fx.stoppedMarker) {
-          const marker: ChatItem = { key: nextKey(), role: 'status', text: 'Stopped', marker: 'stopped' };
+          const marker: ChatItem = { key: nextKey(), role: 'status', text: '已停止', marker: 'stopped' };
           updateItems((prev) => appendStoppedMarker(prev, marker));
         } else if (status === 'error') {
-          setError(p?.error || 'The turn failed.');
+          setError(p?.error || '本轮任务失败。');
         }
         if (fx.successHaptic) void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+        if (live) void outbox.sync();
+        break;
+      }
+      case 'message.interim': {
+        const p = e.payload as GatewayEventMap['message.interim'] | undefined;
+        finishAssistant();
+        if (typeof p?.text === 'string' && p.text && !p.already_streamed) append('assistant', p.text);
         break;
       }
       case 'tool.start': {
@@ -536,7 +568,7 @@ export default function ChatScreen() {
       case 'tool.complete': {
         const p = e.payload as GatewayEventMap['tool.complete'] | undefined;
         if (p?.name === 'todo') {
-          if (!upsertTodo(p)) append('status', 'Todo update failed');
+          if (!upsertTodo(p)) append('status', '待办更新失败');
           break;
         }
         completeTool(p);
@@ -569,16 +601,54 @@ export default function ChatScreen() {
         const p = e.payload as GatewayEventMap['error'] | undefined;
         setThinking(false);
         if (readTurn().turn === 'idle') finalizeSubagents();
-        setError(p?.message ?? 'agent error');
+        setError(p?.message ?? '智能体出错');
         break;
       }
     }
   }
 
+  /** Photo picking — staged locally, uploaded via image.attach_bytes on send. */
+  async function pickImage(source: 'camera' | 'library') {
+    await outbox.pickImage(async () => {
+      if (source === 'camera') {
+        const perm = await ImagePicker.requestCameraPermissionsAsync();
+        if (!perm.granted) {
+          throw new Error('相机权限未开启，请在系统设置中启用后拍照。');
+        }
+      }
+      const options: ImagePicker.ImagePickerOptions = {
+        mediaTypes: ['images'],
+        base64: true,
+        quality: 0.7,
+        exif: false,
+      };
+      const result =
+        source === 'camera'
+          ? await ImagePicker.launchCameraAsync(options)
+          : await ImagePicker.launchImageLibraryAsync(options);
+      if (result.canceled) return null;
+      const asset = result.assets[0];
+      if (!asset?.base64) {
+        throw new Error('无法读取图片，请选择其他图片。');
+      }
+      if (base64ByteLength(asset.base64) > MAX_ATTACH_BYTES) {
+        throw new Error('图片超过 25 MB，网关无法接收。');
+      }
+      return {
+        uri: asset.uri,
+        base64: asset.base64,
+        fileName: asset.fileName,
+        mimeType: asset.mimeType,
+        width: asset.width,
+        height: asset.height,
+      };
+    });
+  }
+
   // Keep the transport's long-lived callbacks pointed at this render's closures.
   // Declared BEFORE the mount effect so it runs first.
   useEffect(() => {
-    handlersRef.current = { applyEvent, loadHistory, onPhase, onNewCard, pinCardsAfterSequence };
+    handlersRef.current = { applyEvent, loadHistory, onPhase, onNewCard, pinCardsAfterSequence, accepted, pickImage };
   });
 
   useEffect(() => {
@@ -597,7 +667,10 @@ export default function ChatScreen() {
       },
       // Only adopt a built (non-lazy) resume's model — a lazy reattach reports the gateway
       // default, and an info-less resume omits it; neither may clobber the known model.
-      onResumed: (res) => setPill((p) => withResumedModel(p, res.info)),
+      onResumed: (res) => {
+        setPill((p) => withResumedModel(p, res.info));
+        outbox.seed(res);
+      },
       onPhase: (p) => handlersRef.current?.onPhase(p),
       applyEvent: (e) => handlersRef.current?.applyEvent(e),
       anchorKey: () => itemsMirror.anchorKey(),
@@ -606,6 +679,39 @@ export default function ChatScreen() {
     transportRef.current = t;
     registryRef.current = t.registry;
     orchestratorRef.current = t.orchestrator;
+    outbox.configure({
+      connected: () => t.client.isOpen && !cancelledRef.current,
+      liveSession: () => liveIdRef.current,
+      call: (method, params) => t.client.call(method, params),
+      ensureSession: async () => {
+        if (!liveIdRef.current) {
+          const created = await t.client.call('session.create', withProfile({}, profileRef.current));
+          liveIdRef.current = created.session_id;
+          storedIdRef.current = created.stored_session_id ?? created.session_id;
+          setPill((p) => withResumedModel(p, created.info));
+          if (id === 'new') {
+            startedDraftRef.current = storedIdRef.current;
+            setStartedDraft(storedIdRef.current);
+          }
+          const scope = scopeRef.current;
+          if (scope) await outbox.migrate(new ChatJournal(journalScope(scope.gateway, scope.identity, profileRef.current, storedIdRef.current)), storedIdRef.current);
+          void withAuthRetry((r) => r.claimSession(created.session_id, storedIdRef.current!)).catch(() => {});
+        }
+        return liveIdRef.current;
+      },
+      snapshot: async () => {
+        // activate addresses a live runtime; resume addresses the stored conversation.
+        const params: RpcMethods['session.activate']['params'] = withProfile({
+          session_id: liveIdRef.current!, omit_messages: true,
+        }, profileRef.current);
+        const res = await t.client.call('session.activate', params);
+        liveIdRef.current = res.session_id;
+        // Same request-card withdrawal/Stop preservation rule as reconnect seeding.
+        t.store.dispatch({ type: 'resume.seeded', running: resumeRunning(res), openRequestIds: res.open_requests?.map((r) => r.id) });
+        return res;
+      },
+      accepted: (draft, status, key) => handlersRef.current?.accepted(draft, status, key),
+    });
     setTurn(t.store.getState());
     const unsubStore = t.store.subscribe(() => setTurn(t.store.getState()));
     // Foreground triggers are held off until start() owns the single-flight slot (PR #22
@@ -616,6 +722,11 @@ export default function ChatScreen() {
       try {
         await hydrateProfileStore(); // no-op when sessions screen already ran
         profileRef.current = getProfileState().selected;
+        const info = await connectionInfo();
+        if (!info) throw new Error('尚未连接网关。');
+        scopeRef.current = { gateway: info.baseUrl, identity: info.deviceId ?? info.username };
+        const restoredId = await outbox.initialize(new ChatJournal(journalScope(info.baseUrl, info.deviceId ?? info.username, profileRef.current, id)));
+        if (restoredId) storedIdRef.current = restoredId;
         let historyLoaded = false;
         if (id !== 'new') {
           storedIdRef.current = id;
@@ -636,7 +747,7 @@ export default function ChatScreen() {
         if (!cancelledRef.current) {
           // start() never reports `failed`: a card its history load recorded is pinned here (finding 6).
           handlersRef.current?.pinCardsAfterSequence();
-          setError('Could not open a live session. Check your VPN or Wi-Fi.');
+          setError('无法打开会话，请检查 VPN 或 Wi-Fi。');
         }
       }
     })();
@@ -645,6 +756,8 @@ export default function ChatScreen() {
     // single-flight reconnect (it joins a heartbeat/close-triggered run).
     const sub = AppState.addEventListener('change', (next) => {
       if (cancelledRef.current || !started) return;
+      if (next !== 'active') void outbox.save().catch(() => {});
+      if (next === 'active' && t.client.isOpen) void outbox.sync();
       if (shouldReconnect({ hasSocket: true, isOpen: t.client.isOpen, appState: next })) {
         // May join a failing start(): its caller already reports that failure (review M1).
         t.orchestrator.reconnect('foreground').catch(() => {});
@@ -652,6 +765,7 @@ export default function ChatScreen() {
     });
     return () => {
       cancelledRef.current = true;
+      outbox.dispose();
       clearStartedDraft(startedDraftRef.current);
       sub.remove();
       unsubStore();
@@ -662,7 +776,15 @@ export default function ChatScreen() {
         orchestratorRef.current = null;
       }
     };
-  }, [id, itemsMirror, cardPinner]); // itemsMirror and cardPinner are stable (useState)
+  }, [id, itemsMirror, cardPinner, outbox]); // owners are stable (useState)
+
+  const polling = pending.polling;
+  useEffect(() => {
+    if (!ready || !polling) return;
+    const timer = setInterval(() => void outbox.sync(), 1500);
+    void outbox.sync();
+    return () => clearInterval(timer);
+  }, [ready, polling, outbox]);
 
   // Composer model pill — best-effort, never blocks the chat.
   useEffect(() => {
@@ -694,7 +816,7 @@ export default function ChatScreen() {
         const t = transportRef.current;
         const sid = liveIdRef.current;
         if (!t || !sid) {
-          return Promise.resolve({ kind: 'error', message: 'Not connected.' } as SwitchOutcome);
+          return Promise.resolve({ kind: 'error', message: '尚未连接。' } as SwitchOutcome);
         }
         return switchSessionModel(t.client.call.bind(t.client), {
           sessionId: sid,
@@ -728,53 +850,9 @@ export default function ChatScreen() {
   }, [mcpOwner, ready, busy]);
   useEffect(() => () => clearSessionMcpTarget(mcpOwner), [mcpOwner]);
 
-  /** Photo picking — staged locally, uploaded via image.attach_bytes on send. */
-  async function pickImage(source: 'camera' | 'library') {
-    try {
-      if (source === 'camera') {
-        const perm = await ImagePicker.requestCameraPermissionsAsync();
-        if (!perm.granted) {
-          setError('Camera access is off. Enable it in Settings to take photos.');
-          return;
-        }
-      }
-      const options: ImagePicker.ImagePickerOptions = {
-        mediaTypes: ['images'],
-        base64: true,
-        quality: 0.7,
-        exif: false,
-      };
-      const result =
-        source === 'camera'
-          ? await ImagePicker.launchCameraAsync(options)
-          : await ImagePicker.launchImageLibraryAsync(options);
-      if (result.canceled) return;
-      const asset = result.assets[0];
-      if (!asset?.base64) {
-        setError('Could not read that image — try a different one.');
-        return;
-      }
-      if (base64ByteLength(asset.base64) > MAX_ATTACH_BYTES) {
-        setError('That image is over 25 MB — the gateway cannot accept it.');
-        return;
-      }
-      setStagedImage({
-        uri: asset.uri,
-        base64: asset.base64,
-        fileName: asset.fileName,
-        mimeType: asset.mimeType,
-        width: asset.width,
-        height: asset.height,
-      });
-      setError(null);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not open the image picker.');
-    }
-  }
-
   // The add-to-chat sheet (its own formSheet route) fires camera/library
   // requests over the attach bus once it has dismissed itself.
-  useEffect(() => setAttachHandler((action) => void pickImage(action)), []);
+  useEffect(() => setAttachHandler((action) => void (action === 'files' ? outbox.pickFiles() : handlersRef.current?.pickImage(action))), [outbox]);
 
   /** Share the current conversation via the system share sheet. */
   async function shareExport(format: 'text' | 'jsonl') {
@@ -789,67 +867,19 @@ export default function ChatScreen() {
 
   function showExportSheet() {
     if (items.length === 0) return;
-    showActionSheet('Export conversation', [
-      { label: 'Text', onPress: () => void shareExport('text') },
+    showActionSheet('导出会话', [
+      { label: '文本', onPress: () => void shareExport('text') },
       { label: 'JSONL', onPress: () => void shareExport('jsonl') },
     ]);
   }
 
   async function send() {
-    const text = input.trim();
-    const image = stagedImage;
     const t = transportRef.current;
     // Server-driven turn state: sending is only possible from idle (plan B adds steer).
-    if ((!text && !image) || !t || !t.client.isOpen || readTurn().turn !== 'idle') return;
+    if (!t?.client.isOpen || readTurn().turn !== 'idle') return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setInput('');
-    setStagedImage(null);
     setError(null);
-    updateItems((prev) => [
-      ...prev,
-      {
-        key: nextKey(),
-        role: 'user',
-        text,
-        complete: true,
-        ...(image
-          ? { imageUri: image.uri, imageWidth: image.width, imageHeight: image.height }
-          : {}),
-      },
-    ]);
-    dispatchTurn({ type: 'submit.sent' });
-    setThinking(true);
-    try {
-      // Sessions are minted lazily on the first message so abandoned "new
-      // chat" screens never create empty sessions server-side.
-      if (!liveIdRef.current) {
-        const created = await t.client.call('session.create', withProfile({}, profileRef.current));
-        liveIdRef.current = created.session_id;
-        setPill((p) => withResumedModel(p, created.info));
-        if (created.stored_session_id) storedIdRef.current = created.stored_session_id;
-        // The URL stays /chat/new (the transport is keyed on it), so tell the sidebar this draft
-        // has started: New chat must open a fresh one, and its Recents row is this screen.
-        if (id === 'new' && created.stored_session_id) {
-          startedDraftRef.current = created.stored_session_id;
-          setStartedDraft(created.stored_session_id);
-        }
-        // Best-effort: bind this device to the new session so session-stop push
-        // hooks can target it. Never block the send flow on the claim.
-        const liveId = created.session_id;
-        void withAuthRetry((r) => r.claimSession(liveId, storedIdRef.current ?? liveId)).catch(() => {});
-      }
-      const sid = liveIdRef.current;
-      // prompt.submit has no image params — stage the photo server-side first;
-      // the next submit drains the attached-images queue (docs/contracts/attachments.md).
-      if (image) await t.client.call('image.attach_bytes', buildAttachParams(sid, image));
-      // queued:true — never redirects or interrupts a busy session, even if our view of
-      // the turn state is stale (dc1-1 runs busy_input_mode: interrupt; spec §5.1).
-      await t.client.call('prompt.submit', { session_id: sid, text, queued: true });
-    } catch (e) {
-      dispatchTurn({ type: 'event.error', replayed: false }); // waiting → idle
-      setThinking(false);
-      setError(e instanceof Error ? e.message : 'send failed');
-    }
+    await outbox.send();
   }
 
   // Request cards live in the turn store (outside items) and merge in after their anchor.
@@ -975,7 +1005,7 @@ export default function ChatScreen() {
             // Pre-rasterized at 3× from the lobehub HermesAgent.Text SVG —
             // expo-image's SVG coder mangles its evenodd paths.
             source={require('../../../assets/images/hermesagent-text.png')}
-            accessibilityLabel="Hermes Agent"
+            accessibilityLabel="Hermes 智能体"
             contentFit="contain"
             tintColor={colors.text}
             // 52×24 lockup; size 56 matches HermesAgent.Text.
@@ -984,7 +1014,7 @@ export default function ChatScreen() {
           <Text style={{ fontFamily: serif, color: colors.text, fontSize: 30, textAlign: 'center' }}>
             {greetingForHour(new Date().getHours())}
           </Text>
-          <Text style={{ color: colors.textFaint, fontSize: 14 }}>Messages run on your own gateway.</Text>
+          <Text style={{ color: colors.textFaint, fontSize: 14 }}>消息由你自己的网关处理。</Text>
         </Animated.View>
       ) : (
         <FlatList
@@ -1064,21 +1094,21 @@ export default function ChatScreen() {
           gap: 10,
         }}
       >
-        <HeaderButton icon="line.3.horizontal" label="Open menu" onPress={openSidebar} />
+        <HeaderButton icon="line.3.horizontal" label="打开菜单" onPress={openSidebar} />
         <View style={{ flex: 1 }} />
         {items.length > 0 ? (
           <Animated.View entering={FadeIn.duration(200)}>
-            <HeaderButton icon="square.and.arrow.up" label="Export conversation" onPress={showExportSheet} />
+            <HeaderButton icon="square.and.arrow.up" label="导出会话" onPress={showExportSheet} />
           </Animated.View>
         ) : null}
         {id !== 'new' ? (
           <HeaderButton
             icon="square.and.pencil"
-            label="New chat"
+            label="新建会话"
             onPress={() => router.replace('/chat/new')}
           />
         ) : (
-          <HeaderButton icon="gearshape" label="Settings" onPress={() => router.push('/settings')} />
+          <HeaderButton icon="gearshape" label="设置" onPress={() => router.push('/settings')} />
         )}
       </View>
 
@@ -1090,32 +1120,49 @@ export default function ChatScreen() {
           {reconnectNote}
         </Animated.Text>
       ) : null}
-      {error ? (
+      {error || pending.error ? (
         <Animated.Text
           entering={FadeIn.duration(200)}
           selectable
           style={{ color: colors.danger, fontSize: 14, paddingHorizontal: 16, paddingBottom: 6 }}
         >
-          {error}
+          {pending.error ?? error}
         </Animated.Text>
+      ) : null}
+      {pending.syncFailed ? (
+        <Pressable accessibilityRole="button" accessibilityLabel="重试队列同步"
+          onPress={() => outbox.retrySync()} style={{ flexDirection: 'row', gap: 6, paddingHorizontal: 16, paddingVertical: 8 }}>
+          <Icon sf="arrow.clockwise" size={16} color={colors.accent} />
+          <Text style={{ color: colors.text, fontSize: 14 }}>重试队列同步</Text>
+        </Pressable>
       ) : null}
       {!ready && !error && !reconnectNote && !showGreeting && items.length === 0 ? (
         <View style={{ paddingBottom: 10 }}>
           <ActivityIndicator color={colors.accent} />
         </View>
       ) : null}
+      {pending.steerNote ? <Text style={{ color: colors.textDim, fontSize: 12, paddingHorizontal: 16 }}>{pending.steerNote}</Text> : null}
+      <MessageQueue entries={pending.queue} remoteText={pending.remoteQueued} disabled={pending.sending}
+        paused={pending.paused} onContinue={() => outbox.continueQueue()}
+        onCancel={(key) => void outbox.changeQueued(key, false)}
+        onRestore={(key) => void outbox.changeQueued(key, true)}
+        onRetry={(key) => outbox.retry(key)} />
 
       <Composer
         value={input}
-        onChangeText={setInput}
-        mode={composerMode(turn, input.trim().length > 0, Boolean(stagedImage))}
+        onChangeText={(text) => outbox.setText(text)}
+        mode={composerMode(turn, input.trim().length > 0, Boolean(stagedImage) || pending.draft.files.length > 0)}
         onSend={send}
         onStop={() => void stop()}
         onSteer={() => void steer()}
-        disabled={!ready}
+        onQueue={() => outbox.enqueue()}
+        disabled={!ready || !pending.hydrated}
+        sending={pending.sending || pending.blocked}
+        files={pending.draft.files}
+        onRemoveFile={(key) => outbox.removeFile(key)}
         stagedImageUri={stagedImage?.uri ?? null}
         onAttachPress={() => router.push('/attach')}
-        onRemoveImage={() => setStagedImage(null)}
+        onRemoveImage={() => void outbox.removeImage()}
         modelName={modelName}
         onModelPress={() => router.push('/models?scope=session')}
       />

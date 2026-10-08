@@ -33,12 +33,12 @@ export { RouteError as ErrorBoundary } from '@/components/route-error';
 type Auth = CustomServerDraft['auth'];
 
 const AUTH_CHOICES: { value: Auth; label: string }[] = [
-  { value: 'none', label: 'None' },
-  { value: 'header', label: 'Bearer token' },
+  { value: 'none', label: '无' },
+  { value: 'header', label: 'Bearer 令牌' },
   { value: 'oauth', label: 'OAuth' },
 ];
 
-const TOKEN_FIELD: SecretField = { key: 'token', label: 'Token', masked: true, required: true };
+const TOKEN_FIELD: SecretField = { key: 'token', label: '令牌', masked: true, required: true };
 const NO_FIELDS: SecretField[] = [];
 
 function inputStyle(colors: ThemeColors, fontScale: number) {
@@ -183,10 +183,10 @@ export default function CustomConnectorScreen() {
       style={{ backgroundColor: colors.bg }}
       contentContainerStyle={{ padding: 20, gap: 16, paddingBottom: 40 }}
     >
-      <Stack.Screen options={{ title: 'Custom server' }} />
+      <Stack.Screen options={{ title: '自定义服务器' }} />
 
       <View style={{ gap: 6 }}>
-        <Label>Server URL</Label>
+        <Label>服务器地址</Label>
         <TextInput
           value={url}
           onChangeText={changeUrl}
@@ -198,7 +198,7 @@ export default function CustomConnectorScreen() {
           textContentType="URL"
           placeholder="https://example.com/mcp"
           placeholderTextColor={colors.placeholder}
-          accessibilityLabel="Server URL"
+          accessibilityLabel="服务器地址"
           style={inputStyle(colors, fontScale)}
         />
         {showIssues && issues.url ? <Issue>{issues.url}</Issue> : null}
@@ -206,7 +206,7 @@ export default function CustomConnectorScreen() {
       </View>
 
       <View style={{ gap: 6 }}>
-        <Label>Name</Label>
+        <Label>名称</Label>
         <TextInput
           value={name}
           onChangeText={changeName}
@@ -214,17 +214,17 @@ export default function CustomConnectorScreen() {
           autoCorrect={false}
           autoCapitalize="none"
           spellCheck={false}
-          placeholder="How the agent refers to it"
+          placeholder="智能体使用的名称"
           placeholderTextColor={colors.placeholder}
-          accessibilityLabel="Name"
+          accessibilityLabel="名称"
           style={inputStyle(colors, fontScale)}
         />
         {showIssues && issues.name ? <Issue>{issues.name}</Issue> : null}
       </View>
 
       <View style={{ gap: 6 }}>
-        <Label>Authentication</Label>
-        <View accessibilityRole="radiogroup" accessibilityLabel="Authentication" style={{ flexDirection: 'row', gap: 8 }}>
+        <Label>身份验证</Label>
+        <View accessibilityRole="radiogroup" accessibilityLabel="身份验证" style={{ flexDirection: 'row', gap: 8 }}>
           {AUTH_CHOICES.map((choice) => {
             const selected = auth === choice.value;
             return (
@@ -258,10 +258,11 @@ export default function CustomConnectorScreen() {
         </View>
         {auth === 'oauth' ? (
           oauthBlocked ? (
-            <Issue>OAuth sign-in needs the gateway on an https:// address.</Issue>
+            <Issue>OAuth 登录需要网关使用 HTTPS 地址。</Issue>
           ) : (
             <Text style={{ color: colors.textDim, fontSize: 13 }}>
-              After adding, the connector opens and takes you to the provider’s sign-in page.
+
+              添加后将打开连接器，并跳转到提供商的登录页面。
             </Text>
           )
         ) : null}
@@ -269,14 +270,15 @@ export default function CustomConnectorScreen() {
 
       {added ? (
         <Text accessibilityLiveRegion="polite" style={{ color: colors.textDim, fontSize: 14 }}>
-          Added. Open it from the Connectors list.
+
+          已添加，可从连接器列表打开。
         </Text>
       ) : null}
 
       <ConnectorSecretForm
         key={auth}
         fields={auth === 'header' ? [TOKEN_FIELD] : NO_FIELDS}
-        submitLabel="Add connector"
+        submitLabel="添加连接器"
         beforeSubmit={() => {
           setShowIssues(true);
           return isCustomServerValid(issues) && !oauthBlocked;
@@ -285,8 +287,8 @@ export default function CustomConnectorScreen() {
       />
 
       <Text style={{ color: colors.textFaint, fontSize: 12.5, marginHorizontal: 4 }}>
-        Adding lets the agent on your gateway connect to this address. The agent uses it after a reload (on the
-        Connectors list) or a gateway restart.
+
+        添加后，网关上的智能体可以连接此地址。重新加载连接器或重启网关后生效。
       </Text>
     </ScrollView>
   );

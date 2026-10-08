@@ -37,13 +37,13 @@ function Description({ text, colors }: { text: string; colors: ThemeColors }) {
       {overflows ? (
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={expanded ? 'Show less of the description' : 'Show more of the description'}
+          accessibilityLabel={expanded ? '收起描述' : '展开描述'}
           accessibilityState={{ expanded }}
           hitSlop={8}
           onPress={() => setExpanded((x) => !x)}
           style={{ alignSelf: 'flex-start' }}
         >
-          <Text style={{ color: colors.text, fontSize: 13, fontWeight: '600' }}>{expanded ? 'Show less' : 'Show more'}</Text>
+          <Text style={{ color: colors.text, fontSize: 13, fontWeight: '600' }}>{expanded ? '收起' : '展开'}</Text>
         </Pressable>
       ) : null}
     </View>
@@ -54,15 +54,15 @@ function ResolvedRow({ card, colors }: { card: RequestCardState; colors: ThemeCo
   const m =
     card.status === 'answered'
       ? card.resolution === 'deny'
-        ? { icon: 'xmark.circle.fill', tint: colors.danger, label: 'Denied' }
+        ? { icon: 'xmark.circle.fill', tint: colors.danger, label: '已拒绝' }
         : {
             icon: 'checkmark.circle.fill',
             tint: colors.success,
-            label: card.resolution === 'session' ? 'Allowed for this session' : card.resolution === 'always' ? 'Always allowed' : 'Approved',
+            label: card.resolution === 'session' ? '已允许此会话' : card.resolution === 'always' ? '已永久允许' : '已批准',
           }
-      : { icon: 'slash.circle', tint: colors.textFaint, label: card.cancelReason ? cancelLabel(card.cancelReason) : 'Closed' };
+      : { icon: 'slash.circle', tint: colors.textFaint, label: card.cancelReason ? cancelLabel(card.cancelReason) : '已关闭' };
   return (
-    <View accessibilityLabel={`Approval ${m.label}`} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingTop: 2 }}>
+    <View accessibilityLabel={`操作授权 ${m.label}`} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingTop: 2 }}>
       <Icon sf={m.icon} size={14} color={m.tint} />
       <Text style={{ color: m.tint, fontSize: 13.5, fontWeight: '600' }}>{m.label}</Text>
     </View>
@@ -96,25 +96,25 @@ export function ApprovalCard({
 
   function confirmAlways() {
     Alert.alert(
-      'Always allow this command?',
-      `Hermes adds “${view.patternKey || 'this pattern'}” to the gateway's permanent allowlist (config.yaml) and stops asking for matching commands, in this and future sessions.`,
+      '永久允许此命令？',
+      `Hermes 将“${view.patternKey || '此规则'}”写入网关的永久允许列表（config.yaml），此会话及以后的会话执行匹配命令时将不再询问。`,
       [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Always allow', style: 'destructive', onPress: () => respond('always') },
+        { text: '取消', style: 'cancel' },
+        { text: '永久允许', style: 'destructive', onPress: () => respond('always') },
       ],
     );
   }
 
   function openMore() {
     const actions: SheetAction[] = [];
-    if (extra.session) actions.push({ label: 'Allow for this session', onPress: () => respond('session') });
-    if (extra.always) actions.push({ label: 'Always allow…', onPress: confirmAlways });
+    if (extra.session) actions.push({ label: '允许此会话', onPress: () => respond('session') });
+    if (extra.always) actions.push({ label: '永久允许…', onPress: confirmAlways });
     showActionSheet(view.patternKey || undefined, actions);
   }
 
   return (
     <View
-      accessibilityLabel={`Approval required: ${view.description || view.command}`}
+      accessibilityLabel={`需要授权：${view.description || view.command}`}
       style={{
         backgroundColor: colors.raised,
         borderRadius: 16,
@@ -129,7 +129,7 @@ export function ApprovalCard({
     >
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
         <Icon sf="exclamationmark.shield.fill" size={15} color={pending ? colors.accent : colors.textFaint} />
-        <Text style={{ color: colors.text, fontSize: 14.5, fontWeight: '700', flexShrink: 1 }}>Approval required</Text>
+        <Text style={{ color: colors.text, fontSize: 14.5, fontWeight: '700', flexShrink: 1 }}>需要授权</Text>
         <View style={{ flex: 1 }} />
         {view.patternKey || view.toolName ? (
           <Text numberOfLines={1} style={{ color: colors.textFaint, fontSize: 12, flexShrink: 1 }}>
@@ -151,14 +151,14 @@ export function ApprovalCard({
       {card.status === 'answering' ? (
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 44 }}>
           <ActivityIndicator size="small" color={colors.textDim} />
-          <Text style={{ color: colors.textDim, fontSize: 13.5 }}>Sending…</Text>
+          <Text style={{ color: colors.textDim, fontSize: 13.5 }}>正在发送…</Text>
         </View>
       ) : card.status === 'pending' ? (
         <>
           <View style={{ flexDirection: 'row', gap: 10 }}>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Deny, block this command"
+              accessibilityLabel="拒绝并阻止此命令"
               accessibilityState={{ disabled: !canAct }}
               disabled={!canAct}
               onPress={() => respond('deny')}
@@ -168,12 +168,12 @@ export function ApprovalCard({
                 opacity: !canAct ? 0.45 : pressed ? 0.6 : 1,
               })}
             >
-              <Text style={{ color: colors.danger, fontSize: 15.5, fontWeight: '600' }}>Deny</Text>
+              <Text style={{ color: colors.danger, fontSize: 15.5, fontWeight: '600' }}>拒绝</Text>
             </Pressable>
             {/* Disabled (waiting its FIFO turn): surface + secondary text, not a faded accent (sim S1 V7). */}
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Approve, run this command once"
+              accessibilityLabel="批准，仅运行一次"
               accessibilityState={{ disabled: !canAct }}
               disabled={!canAct}
               onPress={() => respond('once')}
@@ -184,14 +184,14 @@ export function ApprovalCard({
                 backgroundColor: !canAct ? colors.surface : pressed ? colors.accentPressed : colors.accent,
               })}
             >
-              <Text style={{ color: canAct ? colors.onAccent : colors.textDim, fontSize: 15.5, fontWeight: '700' }}>Approve</Text>
+              <Text style={{ color: canAct ? colors.onAccent : colors.textDim, fontSize: 15.5, fontWeight: '700' }}>批准</Text>
             </Pressable>
           </View>
           {hasMore ? (
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="More approval options"
-              accessibilityHint="Allow for this session or always"
+              accessibilityLabel="更多授权选项"
+              accessibilityHint="允许此会话或永久允许"
               accessibilityState={{ disabled: !canAct }}
               disabled={!canAct}
               hitSlop={8}
@@ -202,12 +202,12 @@ export function ApprovalCard({
                 opacity: !canAct ? 0.45 : pressed ? 0.6 : 1,
               })}
             >
-              <Text style={{ color: colors.textDim, fontSize: 13.5, fontWeight: '600' }}>More options</Text>
+              <Text style={{ color: colors.textDim, fontSize: 13.5, fontWeight: '600' }}>更多选项</Text>
               <Icon sf="chevron.down" size={11} color={colors.textDim} />
             </Pressable>
           ) : null}
           {!canAct && card.legacy ? (
-            <Text style={{ color: colors.textFaint, fontSize: 12.5 }}>Waiting for the earlier approval above…</Text>
+            <Text style={{ color: colors.textFaint, fontSize: 12.5 }}>等待上方较早的授权请求…</Text>
           ) : null}
         </>
       ) : (

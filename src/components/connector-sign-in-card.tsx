@@ -25,7 +25,7 @@ export function ConnectorSignInCard({
   onSignIn,
   onCancel,
 }: {
-  label: 'Sign in' | 'Sign in again';
+  label: '登录' | '重新登录';
   /** Set while a sign-in runs. */
   phase: OauthPhase | null;
   cancelling: boolean;
@@ -53,10 +53,10 @@ export function ConnectorSignInCard({
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <ActivityIndicator color={colors.textDim} />
             <Text accessibilityLiveRegion="polite" style={{ color: colors.textDim, fontSize: 14, flexShrink: 1 }}>
-              {cancelling ? 'Cancelling…' : oauthPhaseLine(phase)}
+              {cancelling ? '正在取消…' : oauthPhaseLine(phase)}
             </Text>
           </View>
-          <CardButton label="Cancel" a11y="Cancel sign-in" onPress={onCancel} disabled={cancelling} />
+          <CardButton label="取消" a11y="取消登录" onPress={onCancel} disabled={cancelling} />
         </>
       ) : (
         <CardButton label={label} a11y={label} onPress={onSignIn} disabled={disabled} primary />
@@ -72,14 +72,15 @@ export function ConnectorSignInCard({
       ) : null}
       {note?.address ? (
         <View style={{ gap: 4 }}>
-          <View accessible accessibilityLabel={`Redirect address: ${note.address}`} style={{ gap: 4 }}>
-            <Text style={{ color: colors.textFaint, fontSize: 12.5, fontWeight: '600' }}>Redirect address</Text>
+          <View accessible accessibilityLabel={`回调地址：${note.address}`} style={{ gap: 4 }}>
+            <Text style={{ color: colors.textFaint, fontSize: 12.5, fontWeight: '600' }}>回调地址</Text>
             <Text selectable style={{ color: colors.text, fontSize: 14 }}>
               {note.address}
             </Text>
           </View>
           <Text style={{ color: colors.textFaint, fontSize: 12.5 }}>
-            The gateway’s default. If its config sets another redirect address, allow that one.
+
+            这是网关默认回调地址。如果网关配置了其他地址，请允许该地址。
           </Text>
         </View>
       ) : null}

@@ -94,7 +94,7 @@ function CurrentModelCard({ info, current }: { info: ModelInfo | null; current: 
   return (
     <Card>
       <View
-        accessibilityLabel={`Current model ${modelDisplayName(model)}${detail ? `, ${detail}` : ''}`}
+        accessibilityLabel={`当前模型 ${modelDisplayName(model)}${detail ? `, ${detail}` : ''}`}
         style={{ flexDirection: 'row', alignItems: 'center', gap: 14, padding: 16, minHeight: 44 }}
       >
         <View
@@ -151,11 +151,11 @@ function ModelRow({
 }) {
   const { colors } = useTheme();
   const name = modelDisplayName(modelId);
-  const hintParts = [unavailable ? 'Unavailable on your plan' : null, pricing, ...badges].filter(Boolean) as string[];
+  const hintParts = [unavailable ? '当前套餐不可用' : null, pricing, ...badges].filter(Boolean) as string[];
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`Switch to ${name}${hintParts.length ? `, ${hintParts.join(', ')}` : ''}`}
+      accessibilityLabel={`切换到 ${name}${hintParts.length ? `, ${hintParts.join(', ')}` : ''}`}
       accessibilityState={{ selected, disabled: disabled || unavailable }}
       disabled={disabled || unavailable}
       onPress={onPress}
@@ -193,10 +193,10 @@ function ModelRow({
 
 function UnconfiguredRow({ row }: { row: ProviderRow }) {
   const { colors } = useTheme();
-  const hint = row.warning || (row.key_env ? `Set ${row.key_env} on the gateway to enable.` : 'Not configured on the gateway.');
+  const hint = row.warning || (row.key_env ? `请在网关配置 ${row.key_env}以启用此功能。` : '网关尚未配置。');
   return (
     <View
-      accessibilityLabel={`${row.name}, not configured. ${hint}`}
+      accessibilityLabel={`${row.name}，尚未配置。 ${hint}`}
       style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16, minHeight: 44 }}
     >
       <View style={{ flex: 1, gap: 3 }}>
@@ -256,7 +256,7 @@ export default function ModelsScreen() {
           setCurrent({ provider: o.provider || i.provider, model: o.model || i.model });
         })
         .catch((e: unknown) => {
-          handleError(e, 'Gateway unreachable — check your VPN or Wi-Fi, then pull to retry.');
+          handleError(e, '无法连接网关，请检查 VPN 或 Wi-Fi 后下拉重试。');
         })
         .finally(() => {
           setRefreshing(false);
@@ -279,21 +279,21 @@ export default function ModelsScreen() {
     try {
       const res = await withAuthRetry((r) => setMainModel(r, provider, model, confirmExpensive));
       if (!res.ok && res.confirm_required) {
-        Alert.alert('Expensive model', res.confirm_message || 'This model may be costly. Continue?', [
-          { text: 'Cancel', style: 'cancel', onPress: () => setCurrent(previous) },
-          { text: 'Switch anyway', style: 'destructive', onPress: () => applySwitch(provider, model, true, previous) },
+        Alert.alert('高费用模型', res.confirm_message || '此模型费用可能较高，是否继续？', [
+          { text: '取消', style: 'cancel', onPress: () => setCurrent(previous) },
+          { text: '仍然切换', style: 'destructive', onPress: () => applySwitch(provider, model, true, previous) },
         ]);
         return;
       }
       if (!res.ok) {
         setCurrent(previous);
-        setError('The gateway did not accept the model switch.');
+        setError('网关未接受模型切换。');
         return;
       }
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       if (res.stale_aux && res.stale_aux.length > 0) {
         setNotice(
-          `Switched. ${res.stale_aux.length} auxiliary task slot${res.stale_aux.length === 1 ? ' is' : 's are'} still pinned to another provider — manage them from the desktop app if needed.`,
+          `已切换。${res.stale_aux.length} 个辅助任务配置仍使用其他提供商，可在桌面端管理。`,
         );
       } else {
         setNotice(null);
@@ -304,7 +304,7 @@ export default function ModelsScreen() {
         .catch(() => {});
     } catch (e) {
       setCurrent(previous);
-      handleError(e, `Could not switch to ${modelDisplayName(model)}.`);
+      handleError(e, `无法切换到${modelDisplayName(model)}。`);
     } finally {
       setBusy(false);
     }
@@ -314,12 +314,12 @@ export default function ModelsScreen() {
     if (busy || !current) return;
     if (current.provider === provider.slug && current.model === modelId) return;
     Alert.alert(
-      'Switch model?',
-      `New chats will use ${modelDisplayName(modelId)} via ${provider.name}. Running chats keep their current model.`,
+      '切换模型？',
+      `新会话将通过 ${provider.name} 使用 ${modelDisplayName(modelId)}。正在进行的会话保持当前模型。`,
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: '取消', style: 'cancel' },
         {
-          text: 'Switch',
+          text: '切换',
           onPress: () => {
             const previous = current;
             setBusy(true);
@@ -337,18 +337,18 @@ export default function ModelsScreen() {
     const t = target;
     if (busy || !t) return;
     if (t.streaming) {
-      Alert.alert('Hermes is responding', 'Stop the current turn before switching this chat’s model.');
+      Alert.alert('Hermes 正在回复', '请先停止当前任务，再切换此会话的模型。');
       return;
     }
     // Compare on the display name: session.info.model and /api/model/options
     // ids may differ in provider-namespacing, but their trailing segment matches.
     if (t.modelId && modelDisplayName(modelId) === modelDisplayName(t.modelId)) return;
     Alert.alert(
-      'Switch this chat?',
-      `This chat will use ${modelDisplayName(modelId)} via ${provider.name}. Other chats and new chats are unaffected.`,
+      '切换此会话的模型？',
+      `此会话将通过 ${provider.name} 使用 ${modelDisplayName(modelId)}。其他会话和新会话不受影响。`,
       [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Switch', onPress: () => void applySessionSwitch(t, provider.slug, modelId, false) },
+        { text: '取消', style: 'cancel' },
+        { text: '切换', onPress: () => void applySessionSwitch(t, provider.slug, modelId, false) },
       ],
     );
   }
@@ -370,20 +370,20 @@ export default function ModelsScreen() {
         router.back(); // back to the chat; the pill updates from session.info
         break;
       case 'confirm':
-        Alert.alert('Expensive model', outcome.message, [
-          { text: 'Cancel', style: 'cancel' },
+        Alert.alert('高费用模型', outcome.message, [
+          { text: '取消', style: 'cancel' },
           {
-            text: 'Switch anyway',
+            text: '仍然切换',
             style: 'destructive',
             onPress: () => void applySessionSwitch(t, provider, model, true),
           },
         ]);
         break;
       case 'busy':
-        Alert.alert('Hermes is responding', 'Stop the current turn before switching this chat’s model.');
+        Alert.alert('Hermes 正在回复', '请先停止当前任务，再切换此会话的模型。');
         break;
       case 'error':
-        setError(outcome.message || 'The gateway did not accept the model switch.');
+        setError(outcome.message || '网关未接受模型切换。');
         break;
     }
   }
@@ -398,7 +398,7 @@ export default function ModelsScreen() {
       contentContainerStyle={{ padding: 20, gap: 12, paddingBottom: 40 }}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={colors.textDim} />}
     >
-      <Stack.Screen options={{ title: sessionMode ? 'Switch model' : 'Model' }} />
+      <Stack.Screen options={{ title: sessionMode ? '切换模型' : '模型' }} />
 
       {error ? (
         <Text selectable style={{ color: colors.danger, fontSize: 14 }}>
@@ -410,29 +410,30 @@ export default function ModelsScreen() {
       ) : null}
 
       {!loaded ? (
-        <Text style={{ color: colors.textFaint, fontSize: 14, textAlign: 'center', paddingTop: 48 }}>Loading…</Text>
+        <Text style={{ color: colors.textFaint, fontSize: 14, textAlign: 'center', paddingTop: 48 }}>正在加载…</Text>
       ) : options || info ? (
         <>
-          <SectionTitle>{sessionMode ? 'This chat' : 'Current'}</SectionTitle>
+          <SectionTitle>{sessionMode ? '此会话' : '当前'}</SectionTitle>
           <CurrentModelCard
             info={sessionMode ? null : info}
             current={sessionMode ? { provider: '', model: sessionModelId ?? '' } : current}
           />
           <Text style={{ color: colors.textFaint, fontSize: 12.5, marginHorizontal: 4 }}>
             {sessionMode
-              ? 'Switches this chat only. New chats use the default (change it in Settings).'
-              : 'Changes apply to new chats on the gateway’s default profile — running chats keep their model.'}
+              ? '仅切换此会话。新会话使用默认模型，可在设置中修改。'
+              : '修改仅用于网关默认配置档案的新会话，正在进行的会话保持当前模型。'}
           </Text>
           {sessionStreaming ? (
             <Text style={{ color: colors.textDim, fontSize: 12.5, marginHorizontal: 4 }}>
-              Hermes is responding — stop the current turn to switch this chat&apos;s model.
+
+              Hermes 正在回复，请先停止当前任务再切换模型。
             </Text>
           ) : null}
 
           {configured.map((p) => (
             <View key={p.slug} style={{ gap: 12 }}>
               <View style={{ height: 8 }} />
-              <SectionTitle>{p.free_tier ? `${p.name} (free tier)` : p.name}</SectionTitle>
+              <SectionTitle>{p.free_tier ? `${p.name} （免费额度）` : p.name}</SectionTitle>
               <Card>
                 {p.models.map((m, idx) => (
                   <View key={m}>
@@ -455,7 +456,7 @@ export default function ModelsScreen() {
               </Card>
               {p.total_models > p.models.length ? (
                 <Text style={{ color: colors.textFaint, fontSize: 12.5, marginHorizontal: 4 }}>
-                  Showing {p.models.length} curated of {p.total_models} models.
+                  精选 {p.models.length} 个，共 {p.total_models} 个模型。
                 </Text>
               ) : null}
             </View>
@@ -464,7 +465,7 @@ export default function ModelsScreen() {
           {unconfigured.length > 0 ? (
             <>
               <View style={{ height: 8 }} />
-              <SectionTitle>Not configured</SectionTitle>
+              <SectionTitle>未配置</SectionTitle>
               <Card>
                 {unconfigured.map((p, idx) => (
                   <View key={p.slug}>
@@ -479,9 +480,10 @@ export default function ModelsScreen() {
       ) : !error ? (
         <View style={{ alignItems: 'center', gap: 14, paddingTop: 96, paddingHorizontal: 32 }}>
           <Icon sf="cpu" size={44} color={colors.textFaint} />
-          <Text style={{ color: colors.text, fontSize: 18, fontWeight: '600' }}>Models unavailable</Text>
+          <Text style={{ color: colors.text, fontSize: 18, fontWeight: '600' }}>模型不可用</Text>
           <Text style={{ color: colors.textDim, fontSize: 14, textAlign: 'center' }}>
-            The gateway did not return any model options. Pull to retry.
+
+            网关未返回模型选项，请下拉重试。
           </Text>
         </View>
       ) : null}

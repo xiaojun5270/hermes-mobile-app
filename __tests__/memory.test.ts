@@ -91,8 +91,8 @@ describe('memory api', () => {
   });
 
   describe('providerLabel', () => {
-    it('maps "" to Built-in files', () => {
-      expect(providerLabel('')).toBe('Built-in files');
+    it('maps "" to 内置文件', () => {
+      expect(providerLabel('')).toBe('内置文件');
     });
     it('passes provider names through', () => {
       expect(providerLabel('mem0')).toBe('mem0');
@@ -148,8 +148,8 @@ describe('memory api', () => {
 
   describe('memoryFileLabel', () => {
     it('matches the admin screen wording', () => {
-      expect(memoryFileLabel('MEMORY.md')).toBe('Agent memory');
-      expect(memoryFileLabel('USER.md')).toBe('User profile');
+      expect(memoryFileLabel('MEMORY.md')).toBe('智能体记忆');
+      expect(memoryFileLabel('USER.md')).toBe('用户档案');
     });
   });
 
@@ -202,32 +202,32 @@ describe('memory api', () => {
   describe('memoryWriteErrorMessage', () => {
     it('maps the size cap (413) to a friendly limit message', () => {
       expect(memoryWriteErrorMessage(new HttpError(413, 'HTTP 413'))).toBe(
-        'Too large — memory files are capped at 256 KB.',
+        '文件过大，记忆文件最多为 256 KB。',
       );
     });
     it('maps 403 to a permission message', () => {
-      expect(memoryWriteErrorMessage(new HttpError(403, 'HTTP 403'))).toMatch(/Permission denied/);
+      expect(memoryWriteErrorMessage(new HttpError(403, 'HTTP 403'))).toMatch(/权限不足/);
     });
     it('maps 404/405 to a plugin-update hint', () => {
-      expect(memoryWriteErrorMessage(new HttpError(404, 'HTTP 404'))).toMatch(/Update the hermes-mobile plugin/);
-      expect(memoryWriteErrorMessage(new HttpError(405, 'HTTP 405'))).toMatch(/Update the hermes-mobile plugin/);
+      expect(memoryWriteErrorMessage(new HttpError(404, 'HTTP 404'))).toMatch(/更新.*hermes-mobile 插件/);
+      expect(memoryWriteErrorMessage(new HttpError(405, 'HTTP 405'))).toMatch(/更新.*hermes-mobile 插件/);
     });
     it('maps 503 to a retry hint', () => {
-      expect(memoryWriteErrorMessage(new HttpError(503, 'HTTP 503'))).toMatch(/unavailable/);
+      expect(memoryWriteErrorMessage(new HttpError(503, 'HTTP 503'))).toMatch(/不可用/);
     });
     it('passes through other error messages and falls back for non-errors', () => {
       expect(memoryWriteErrorMessage(new Error('Network request failed'))).toBe('Network request failed');
-      expect(memoryWriteErrorMessage('weird')).toBe('Save failed — the gateway did not accept the change.');
+      expect(memoryWriteErrorMessage('weird')).toBe('保存失败，网关未接受修改。');
     });
   });
 
   describe('formatBytes', () => {
     it('treats 0 (absent file) as Empty', () => {
-      expect(formatBytes(0)).toBe('Empty');
+      expect(formatBytes(0)).toBe('暂无内容');
     });
     it('handles negatives and non-finite defensively', () => {
-      expect(formatBytes(-5)).toBe('Empty');
-      expect(formatBytes(NaN)).toBe('Empty');
+      expect(formatBytes(-5)).toBe('暂无内容');
+      expect(formatBytes(NaN)).toBe('暂无内容');
     });
     it('formats bytes', () => {
       expect(formatBytes(1)).toBe('1 B');

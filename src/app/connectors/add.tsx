@@ -39,8 +39,8 @@ function CatalogRow({ entry, onPress }: { entry: McpCatalogEntry; onPress: (entr
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`${entry.name}, ${auth}${entry.installed ? ', added' : ''}`}
-      accessibilityHint={entry.installed ? 'Opens the connector' : 'Shows what will be added'}
+      accessibilityLabel={`${entry.name}, ${auth}${entry.installed ? '，已添加' : ''}`}
+      accessibilityHint={entry.installed ? '打开连接器' : '查看将添加的内容'}
       onPress={() => onPress(entry)}
       style={({ pressed }) => ({
         backgroundColor: pressed ? colors.raised : colors.surface,
@@ -57,7 +57,7 @@ function CatalogRow({ entry, onPress }: { entry: McpCatalogEntry; onPress: (entr
         <Text numberOfLines={1} style={{ color: colors.text, fontSize: 16, fontWeight: '600', flexShrink: 1 }}>
           {entry.name}
         </Text>
-        {entry.installed ? <Badge label="Added" /> : null}
+        {entry.installed ? <Badge label="已添加" /> : null}
       </View>
       {entry.description ? (
         <Text numberOfLines={2} style={{ color: colors.textDim, fontSize: 13.5 }}>
@@ -74,7 +74,7 @@ function CustomRow() {
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel="Custom server, add one by URL"
+      accessibilityLabel="自定义服务器，通过地址添加"
       onPress={() => router.push('/connectors/custom')}
       style={({ pressed }) => ({
         flexDirection: 'row',
@@ -91,8 +91,8 @@ function CustomRow() {
     >
       <Icon sf="plus" size={18} color={colors.accent} />
       <View style={{ flex: 1, gap: 2 }}>
-        <Text style={{ color: colors.text, fontSize: 16, fontWeight: '600' }}>Custom server</Text>
-        <Text style={{ color: colors.textDim, fontSize: 13.5 }}>Add one by URL</Text>
+        <Text style={{ color: colors.text, fontSize: 16, fontWeight: '600' }}>自定义服务器</Text>
+        <Text style={{ color: colors.textDim, fontSize: 13.5 }}>通过地址添加</Text>
       </View>
     </Pressable>
   );
@@ -172,9 +172,9 @@ export default function AddConnectorScreen() {
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
       <Stack.Screen
         options={{
-          title: 'Add connector',
+          title: '添加连接器',
           headerSearchBarOptions: {
-            placeholder: 'Search the catalog',
+            placeholder: '搜索目录',
             onChangeText: (e) => setQuery(e.nativeEvent.text),
             hideWhenScrolling: true,
           },
@@ -200,11 +200,11 @@ export default function AddConnectorScreen() {
         ListHeaderComponent={unsupported ? null : <CustomRow />}
         ListEmptyComponent={
           unsupported
-            ? empty('Connectors aren’t available', unsupported)
+            ? empty('连接器不可用', unsupported)
             : loaded && !refreshing && !error
               ? query
-                ? empty('No matches', 'No catalog connector matches your search.')
-                : empty('No catalog connectors', 'The gateway’s catalog is empty. You can still add a server by URL.')
+                ? empty('没有匹配结果', '目录中没有匹配的连接器。')
+                : empty('目录中暂无连接器', '网关目录为空，仍可通过地址添加服务器。')
               : null
         }
       />

@@ -17,6 +17,7 @@ import { AuthError } from '@/api/restClient';
 import { Icon } from '@/components/icon';
 import { withAuthRetry } from '@/connection';
 import { isoToUnix, timeAgo, timeUntil } from '@/lib/format';
+import { scheduleLabel } from '@/lib/zh-cn';
 import { useTheme } from '@/theme';
 
 export { RouteError as ErrorBoundary } from '@/components/route-error';
@@ -57,12 +58,12 @@ function JobCard({
   const nextRun = isoToUnix(job.next_run_at);
   const failed = job.last_status === 'error';
 
-  const lastLine = lastRun !== null ? `ran ${timeAgo(lastRun).toLowerCase()}` : 'never ran';
+  const lastLine = lastRun !== null ? `上次运行：${timeAgo(lastRun)}` : '尚未运行';
   const nextLine = job.enabled
     ? nextRun !== null
-      ? ` · next ${timeUntil(nextRun)}`
+      ? ` · 下次 ${timeUntil(nextRun)}`
       : ''
-    : ' · paused';
+    : ' · 已暂停';
 
   return (
     <View
@@ -85,14 +86,14 @@ function JobCard({
             {job.name || job.id}
           </Text>
           <Text numberOfLines={1} style={{ color: colors.textDim, fontSize: 13.5 }}>
-            {scheduleDisplay(job)}
+            {scheduleLabel(scheduleDisplay(job))}
             {job.profile_name && !job.is_default_profile ? `  ·  ${job.profile_name}` : ''}
           </Text>
         </View>
         <Switch
           value={job.enabled}
           onValueChange={() => onToggle(job)}
-          accessibilityLabel={`${job.name || 'Job'} ${job.enabled ? 'enabled, double tap to pause' : 'paused, double tap to resume'}`}
+          accessibilityLabel={`${job.name || '任务'} ${job.enabled ? '已启用，双击暂停' : '已暂停，双击恢复'}`}
           trackColor={{ true: colors.accent }}
           hitSlop={8}
         />
@@ -109,7 +110,7 @@ function JobCard({
           }}
         />
         <Text numberOfLines={1} style={{ color: failed ? colors.danger : colors.textFaint, fontSize: 13 }}>
-          {failed ? `failed, ${lastLine}` : lastLine}
+          {failed ? `失败，${lastLine}` : lastLine}
           {nextLine}
         </Text>
       </View>
@@ -117,7 +118,7 @@ function JobCard({
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={`Run ${job.name || 'job'} now`}
+          accessibilityLabel={`运行 ${job.name || '任务'}，立即运行`}
           onPress={() => onRunNow(job)}
           disabled={queued}
           style={({ pressed }) => ({
@@ -135,13 +136,13 @@ function JobCard({
             color={queued ? colors.success : colors.accent}
           />
           <Text style={{ color: queued ? colors.success : colors.accent, fontSize: 15, fontWeight: '600' }}>
-            {queued ? 'Queued' : 'Run now'}
+            {queued ? '已排队' : '立即运行'}
           </Text>
         </Pressable>
 
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={`Edit ${job.name || 'job'}`}
+          accessibilityLabel={`编辑 ${job.name || '任务'}`}
           onPress={() => onEdit(job)}
           style={({ pressed }) => ({
             flexDirection: 'row',
@@ -153,13 +154,13 @@ function JobCard({
           })}
         >
           <Icon sf="pencil" size={16} color={colors.textDim} />
-          <Text style={{ color: colors.textDim, fontSize: 14 }}>Edit</Text>
+          <Text style={{ color: colors.textDim, fontSize: 14 }}>编辑</Text>
         </Pressable>
 
         {job.last_run_at ? (
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={expanded ? 'Hide last output' : 'Show last output'}
+            accessibilityLabel={expanded ? '隐藏最近结果' : '查看最近结果'}
             onPress={() => onToggleOutput(job)}
             style={({ pressed }) => ({
               flexDirection: 'row',
@@ -170,7 +171,7 @@ function JobCard({
               opacity: pressed ? 0.5 : 1,
             })}
           >
-            <Text style={{ color: colors.textDim, fontSize: 14 }}>Last output</Text>
+            <Text style={{ color: colors.textDim, fontSize: 14 }}>最近结果</Text>
             <Icon sf={expanded ? 'chevron.up' : 'chevron.down'} size={13} color={colors.textDim} />
           </Pressable>
         ) : null}
@@ -192,7 +193,7 @@ function JobCard({
             </Text>
           ) : null}
           {!output || output.status === 'loading' ? (
-            <Text style={{ color: colors.textFaint, fontSize: 12.5 }}>Loading output…</Text>
+            <Text style={{ color: colors.textFaint, fontSize: 12.5 }}>正在加载结果…</Text>
           ) : output.status === 'error' ? (
             <Text style={{ color: colors.danger, fontSize: 12.5 }}>{output.message}</Text>
           ) : (
@@ -201,7 +202,7 @@ function JobCard({
               numberOfLines={14}
               style={{ color: colors.text, fontFamily: MONO, fontSize: 12, lineHeight: 17 }}
             >
-              {output.text || 'No output recorded for the last run.'}
+              {output.text || '最近一次运行没有记录结果。'}
             </Text>
           )}
         </View>
@@ -235,7 +236,7 @@ export default function CronScreen() {
     try {
       setJobs(await withAuthRetry((r) => listCronJobs(r)));
     } catch (e) {
-      handleError(e, 'Gateway unreachable — check your VPN or Wi-Fi, then pull to retry.');
+      handleError(e, '无法连接网关，请检查 VPN 或 Wi-Fi 后下拉重试。');
     } finally {
       setRefreshing(false);
       setLoaded(true);
@@ -266,7 +267,7 @@ export default function CronScreen() {
         replaceJob(key, updated);
       } catch (e) {
         replaceJob(key, job); // revert
-        handleError(e, `Couldn't ${enabling ? 'resume' : 'pause'} “${job.name || job.id}” — gateway unreachable.`);
+        handleError(e, `无法${enabling ? '恢复' : '暂停'}“${job.name || job.id}”，无法连接网关。`);
       }
     },
     [replaceJob, handleError],
@@ -292,7 +293,7 @@ export default function CronScreen() {
           3000,
         );
       } catch (e) {
-        handleError(e, `Couldn't run “${job.name || job.id}” — gateway unreachable.`);
+        handleError(e, `无法运行“${job.name || job.id}”，无法连接网关。`);
       }
     },
     [replaceJob, handleError],
@@ -324,7 +325,7 @@ export default function CronScreen() {
           router.replace('/');
           return;
         }
-        setOutputs((prev) => ({ ...prev, [key]: { status: 'error', message: 'Couldn’t load output — pull to retry.' } }));
+        setOutputs((prev) => ({ ...prev, [key]: { status: 'error', message: '无法加载结果，请下拉重试。' } }));
       }
     },
     [expanded, outputs],
@@ -334,11 +335,11 @@ export default function CronScreen() {
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
       <Stack.Screen
         options={{
-          title: 'Cron Jobs',
+          title: '定时任务',
           headerRight: () => (
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="New cron job"
+              accessibilityLabel="新建定时任务"
               hitSlop={4}
               onPress={() => router.push('/cron-edit')}
               style={({ pressed }) => ({ padding: 10, opacity: pressed ? 0.5 : 1 })}
@@ -377,9 +378,10 @@ export default function CronScreen() {
           loaded && !refreshing && !error ? (
             <View style={{ alignItems: 'center', gap: 14, paddingTop: 96, paddingHorizontal: 32 }}>
               <Icon sf="clock.arrow.2.circlepath" size={44} color={colors.textFaint} />
-              <Text style={{ color: colors.text, fontSize: 18, fontWeight: '600' }}>No cron jobs</Text>
+              <Text style={{ color: colors.text, fontSize: 18, fontWeight: '600' }}>暂无定时任务</Text>
               <Text style={{ color: colors.textDim, fontSize: 14, textAlign: 'center' }}>
-                Schedule recurring agent runs — tap + to create one, or use “hermes cron add” on your gateway.
+
+                可创建周期任务，或在网关运行 “hermes cron add”。
               </Text>
             </View>
           ) : null

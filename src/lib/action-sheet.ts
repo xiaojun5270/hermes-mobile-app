@@ -23,7 +23,7 @@ export function showActionSheetOn(
   actions: SheetAction[],
 ) {
   if (platform === 'ios') {
-    const options = [...actions.map((a) => a.label), 'Cancel'];
+    const options = [...actions.map((a) => a.label), '取消'];
     const destructive = actions.findIndex((a) => a.destructive);
     ActionSheetIOS.showActionSheetWithOptions(
       {
@@ -44,6 +44,6 @@ export function showActionSheetOn(
       style: a.destructive ? ('destructive' as const) : undefined,
       onPress: a.onPress,
     })),
-    { text: 'Cancel', style: 'cancel' as const },
+    { text: '取消', style: 'cancel' as const },
   ]);
 }

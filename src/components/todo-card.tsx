@@ -38,7 +38,7 @@ export function TodoCard({ items }: { items: TodoItem[] }) {
       >
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
           <Icon sf="checklist" size={12} color={colors.accent} />
-          <Text style={{ color: colors.text, fontSize: 13.5, fontWeight: '600' }}>Plan</Text>
+          <Text style={{ color: colors.text, fontSize: 13.5, fontWeight: '600' }}>计划</Text>
           <View style={{ flex: 1 }} />
           <Text style={{ color: colors.textFaint, fontSize: 12, fontVariant: ['tabular-nums'] }}>
             {done}/{items.length}

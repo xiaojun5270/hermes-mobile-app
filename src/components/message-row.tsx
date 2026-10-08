@@ -9,6 +9,7 @@ import type { SubagentBatch } from '@/lib/subagent-progress';
 import type { ToolOutcome } from '@/lib/tool-outcome';
 import type { TodoItem } from '@/lib/todo';
 import { useTheme } from '@/theme';
+import { fileSize } from '@/lib/outgoing';
 
 export interface ToolInfo {
   id: string;
@@ -29,10 +30,10 @@ export interface ToolInfo {
 
 /** The finished-state glyph and what VoiceOver says for each outcome. */
 const OUTCOME_MARK = {
-  ok: { sf: 'checkmark.circle.fill', label: 'finished' },
-  failed: { sf: 'xmark.circle.fill', label: 'failed' },
-  denied: { sf: 'hand.raised.fill', label: 'denied' },
-  interrupted: { sf: 'stop.circle.fill', label: 'interrupted' },
+  ok: { sf: 'checkmark.circle.fill', label: '已完成' },
+  failed: { sf: 'xmark.circle.fill', label: '失败' },
+  denied: { sf: 'hand.raised.fill', label: '已拒绝' },
+  interrupted: { sf: 'stop.circle.fill', label: '已中断' },
 } as const;
 
 export interface ChatItem {
@@ -54,6 +55,7 @@ export interface ChatItem {
   /** Natural dimensions of the attached photo, for aspect-correct layout. */
   imageWidth?: number;
   imageHeight?: number;
+  files?: { name: string; size?: number }[];
   /** User message delivered via session.steer into the running turn (spec §5.3). */
   steered?: boolean;
   /** Status rows with special rendering. 'stopped' = the turn ended with status "interrupted". */
@@ -67,7 +69,7 @@ function ReasoningDisclosure({ text }: { text: string }) {
     <View style={{ marginBottom: 8 }}>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={`Reasoning, ${expanded ? 'tap to collapse' : 'tap to expand'}`}
+        accessibilityLabel={`思考过程，${expanded ? '收起' : '展开'}`}
         onPress={() => {
           LayoutAnimation.configureNext(LayoutAnimation.create(220, 'easeInEaseOut', 'opacity'));
           setExpanded((e) => !e);
@@ -75,7 +77,7 @@ function ReasoningDisclosure({ text }: { text: string }) {
         style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}
       >
         <Icon sf="brain" size={12} color={colors.textFaint} />
-        <Text style={{ color: colors.textFaint, fontSize: 12.5, fontWeight: '600' }}>Reasoning</Text>
+        <Text style={{ color: colors.textFaint, fontSize: 12.5, fontWeight: '600' }}>思考过程</Text>
         <Icon sf={expanded ? 'chevron.up' : 'chevron.down'} size={10} color={colors.textFaint} />
       </Pressable>
       {expanded ? (
@@ -98,10 +100,10 @@ function ToolCallCard({ tool }: { tool: ToolInfo }) {
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`Tool ${tool.name}, ${tool.running ? 'running' : mark.label}${
+      accessibilityLabel={`工具 ${tool.name}，${tool.running ? '运行中' : mark.label}${
         // A summary's closing period would read ".," before the details hint (sim QA nit).
         tool.summary && !tool.running ? `, ${hasDetail ? tool.summary.replace(/\.+$/, '') : tool.summary}` : ''
-      }${hasDetail ? ', tap for details' : ''}`}
+      }${hasDetail ? '，查看详情' : ''}`}
       onPress={
         hasDetail
           ? () => {
@@ -135,7 +137,7 @@ function ToolCallCard({ tool }: { tool: ToolInfo }) {
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
             {tool.durationS !== undefined ? (
               <Text style={{ color: colors.textFaint, fontSize: 12, fontVariant: ['tabular-nums'] }}>
-                {tool.durationS < 10 ? tool.durationS.toFixed(1) : Math.round(tool.durationS)}s
+                {tool.durationS < 10 ? tool.durationS.toFixed(1) : Math.round(tool.durationS)} 秒
               </Text>
             ) : null}
             <Icon sf={mark.sf} size={13} color={markColor} />
@@ -179,10 +181,19 @@ export const MessageRow = memo(function MessageRow({ item }: { item: ChatItem })
     const imageSize = item.imageUri ? bubbleImageSize(item.imageWidth, item.imageHeight) : null;
     return (
       <View style={{ alignItems: 'flex-end', paddingVertical: 6 }}>
+        {item.files?.map((file, i) => (
+          <View key={i} style={{ maxWidth: '82%', flexDirection: 'row', alignItems: 'center', gap: 8, padding: 10, marginBottom: 5, borderWidth: 1, borderColor: colors.border, borderRadius: 8 }}>
+            <Icon sf="doc" size={18} color={colors.textDim} />
+            <View style={{ flexShrink: 1 }}>
+              <Text style={{ color: colors.text, fontSize: 14 }}>{file.name}</Text>
+              <Text style={{ color: colors.textFaint, fontSize: 12 }}>{fileSize(file.size)}</Text>
+            </View>
+          </View>
+        ))}
         {item.imageUri && imageSize ? (
           <Image
             source={{ uri: item.imageUri }}
-            accessibilityLabel="Photo you sent"
+            accessibilityLabel="你发送的照片"
             contentFit="cover"
             style={{
               width: imageSize.width,
@@ -196,7 +207,7 @@ export const MessageRow = memo(function MessageRow({ item }: { item: ChatItem })
         {item.text ? (
           <View
             accessible
-            accessibilityLabel={item.steered ? `You steered: ${item.text}` : undefined}
+            accessibilityLabel={item.steered ? `你的引导：${item.text}` : undefined}
             style={{
               maxWidth: '82%',
               backgroundColor: colors.userBubble,
@@ -214,7 +225,7 @@ export const MessageRow = memo(function MessageRow({ item }: { item: ChatItem })
         {item.steered ? (
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingTop: 4, paddingRight: 6 }}>
             <Icon sf="arrow.turn.down.right" size={11} color={colors.textFaint} />
-            <Text style={{ color: colors.textFaint, fontSize: 12, fontWeight: '600' }}>Steered</Text>
+            <Text style={{ color: colors.textFaint, fontSize: 12, fontWeight: '600' }}>已引导</Text>
           </View>
         ) : null}
       </View>
@@ -226,7 +237,7 @@ export const MessageRow = memo(function MessageRow({ item }: { item: ChatItem })
     // (which includes Copy on iOS). Reasoning-only items have empty text.
     return (
       <Pressable
-        accessibilityLabel="Assistant message, long-press to share"
+        accessibilityLabel="智能体消息，长按分享"
         onLongPress={
           item.complete && item.text.trim()
             ? () => {
@@ -266,11 +277,11 @@ export const MessageRow = memo(function MessageRow({ item }: { item: ChatItem })
     return (
       <View
         accessible
-        accessibilityLabel="Response stopped"
+        accessibilityLabel="回复已停止"
         style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 6 }}
       >
         <Icon sf="stop.circle" size={13} color={colors.textDim} />
-        <Text style={{ color: colors.textDim, fontSize: 13, fontWeight: '600' }}>Stopped</Text>
+        <Text style={{ color: colors.textDim, fontSize: 13, fontWeight: '600' }}>已停止</Text>
       </View>
     );
   }

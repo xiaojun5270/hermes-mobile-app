@@ -45,7 +45,7 @@ export default function ConnectScreen() {
         // Device-mode restore throws AuthError(REPAIR_MESSAGE) when the
         // pairing is revoked — surface that verbatim so the fix is obvious.
         if (e instanceof AuthError) setError(e.message);
-        else setError('Saved connection failed — is your VPN or Wi-Fi up?');
+        else setError('无法恢复连接，请检查 VPN 或 Wi-Fi。');
       })
       .finally(() => {
         setBusy(false);
@@ -60,8 +60,8 @@ export default function ConnectScreen() {
       await connect(url.trim(), username.trim(), password);
       router.replace('/chat/new');
     } catch (e) {
-      if (e instanceof AuthError) setError('Invalid username or password.');
-      else setError('Could not reach the gateway. Check the address and your network.');
+      if (e instanceof AuthError) setError('用户名或密码不正确。');
+      else setError('无法连接网关，请检查地址和网络。');
     } finally {
       setBusy(false);
     }
@@ -93,13 +93,14 @@ export default function ConnectScreen() {
         <View style={{ alignItems: 'center', gap: 20 }}>
           <Image
             source={require('../../assets/images/hermesagent-text.png')}
-            accessibilityLabel="Hermes Agent"
+            accessibilityLabel="Hermes 智能体"
             contentFit="contain"
             tintColor={colors.text}
             style={{ height: 64, width: (64 * 52) / 24 }}
           />
           <Text style={{ color: colors.textDim, fontSize: 15, textAlign: 'center' }}>
-            Your agent, in your pocket.{'\n'}Connects over your private network.
+
+            随身使用你的智能体。{'\n'}通过你的私有网络连接。
           </Text>
         </View>
 
@@ -111,7 +112,7 @@ export default function ConnectScreen() {
 
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Pair with QR code"
+          accessibilityLabel="扫码配对"
           onPress={() => router.push('/pair')}
           disabled={busy}
           style={({ pressed }) => ({
@@ -126,7 +127,7 @@ export default function ConnectScreen() {
           })}
         >
           <Icon sf="qrcode.viewfinder" size={20} color={colors.onInverse} />
-          <Text style={{ color: colors.onInverse, fontSize: 16.5, fontWeight: '600' }}>Pair with QR code</Text>
+          <Text style={{ color: colors.onInverse, fontSize: 16.5, fontWeight: '600' }}>扫码配对</Text>
         </Pressable>
 
         {showPasswordForm ? (
@@ -148,7 +149,7 @@ export default function ConnectScreen() {
                 autoCapitalize="none"
                 autoCorrect={false}
                 keyboardType="url"
-                placeholder="Gateway URL — http://100.x.y.z:9119"
+                placeholder="网关地址，例如 http://100.x.y.z:9119"
                 placeholderTextColor={colors.textFaint}
               />
               <View style={{ height: 1, backgroundColor: colors.border }} />
@@ -159,7 +160,7 @@ export default function ConnectScreen() {
                 autoCapitalize="none"
                 autoCorrect={false}
                 textContentType="username"
-                placeholder="Username"
+                placeholder="用户名"
                 placeholderTextColor={colors.textFaint}
               />
               <View style={{ height: 1, backgroundColor: colors.border }} />
@@ -169,7 +170,7 @@ export default function ConnectScreen() {
                 onChangeText={setPassword}
                 secureTextEntry
                 textContentType="password"
-                placeholder="Password"
+                placeholder="密码"
                 placeholderTextColor={colors.textFaint}
                 onSubmitEditing={onConnect}
               />
@@ -177,7 +178,7 @@ export default function ConnectScreen() {
 
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Connect with username and password"
+              accessibilityLabel="使用用户名和密码连接"
               onPress={onConnect}
               disabled={busy}
               style={({ pressed }) => ({
@@ -192,18 +193,18 @@ export default function ConnectScreen() {
               {busy ? (
                 <ActivityIndicator color={colors.textDim} />
               ) : (
-                <Text style={{ color: colors.text, fontSize: 16, fontWeight: '600' }}>Connect</Text>
+                <Text style={{ color: colors.text, fontSize: 16, fontWeight: '600' }}>连接</Text>
               )}
             </Pressable>
           </View>
         ) : (
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Use password instead"
+            accessibilityLabel="改用密码连接"
             onPress={() => setShowPasswordForm(true)}
             style={{ minHeight: 44, alignItems: 'center', justifyContent: 'center' }}
           >
-            <Text style={{ color: colors.textDim, fontSize: 15.5 }}>Use password instead</Text>
+            <Text style={{ color: colors.textDim, fontSize: 15.5 }}>改用密码连接</Text>
           </Pressable>
         )}
       </ScrollView>

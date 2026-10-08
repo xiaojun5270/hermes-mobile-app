@@ -56,7 +56,7 @@ describe('switchSessionModel', () => {
     });
     expect(await switchSessionModel((async () => ({ confirm_required: true })) as any, args)).toEqual({
       kind: 'confirm',
-      message: 'This model may be costly. Switch anyway?',
+      message: '此模型费用可能较高，仍要切换吗？',
     });
   });
 

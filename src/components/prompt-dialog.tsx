@@ -60,10 +60,10 @@ export function PromptDialog({
           />
           <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 18 }}>
             <Pressable accessibilityRole="button" onPress={onCancel} hitSlop={8}>
-              <Text style={{ color: colors.textDim, fontSize: 16 }}>Cancel</Text>
+              <Text style={{ color: colors.textDim, fontSize: 16 }}>取消</Text>
             </Pressable>
             <Pressable accessibilityRole="button" onPress={() => onSubmit(value)} hitSlop={8}>
-              <Text style={{ color: colors.accent, fontSize: 16, fontWeight: '600' }}>Save</Text>
+              <Text style={{ color: colors.accent, fontSize: 16, fontWeight: '600' }}>保存</Text>
             </Pressable>
           </View>
         </Pressable>

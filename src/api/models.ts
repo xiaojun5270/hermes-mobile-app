@@ -114,7 +114,7 @@ export function setMainModel(
 
 /** Short display name: trailing path segment of a slash-namespaced model id. */
 export function modelDisplayName(modelId: string): string {
-  if (!modelId) return 'Not configured';
+  if (!modelId) return '未配置';
   const idx = modelId.lastIndexOf('/');
   const tail = idx >= 0 ? modelId.slice(idx + 1) : modelId;
   return tail || modelId;
@@ -123,19 +123,19 @@ export function modelDisplayName(modelId: string): string {
 /** One-line pricing hint, or null when the row carries no pricing for the model. */
 export function pricingLine(pricing: ModelPricing | undefined): string | null {
   if (!pricing) return null;
-  if (pricing.free) return 'Free';
+  if (pricing.free) return '免费';
   const parts: string[] = [];
-  if (pricing.input) parts.push(`${pricing.input} in`);
-  if (pricing.output) parts.push(`${pricing.output} out`);
+  if (pricing.input) parts.push(`输入 ${pricing.input}`);
+  if (pricing.output) parts.push(`输出 ${pricing.output}`);
   if (parts.length === 0) return null;
-  return `${parts.join(' · ')} /Mtok`;
+  return `${parts.join(' · ')} / 百万词元`;
 }
 
 /** Capability badges for a model, from picker hints. */
 export function hintBadges(hints: ModelHints | undefined): string[] {
   const out: string[] = [];
-  if (hints?.fast) out.push('Fast');
-  if (hints?.reasoning) out.push('Reasoning');
+  if (hints?.fast) out.push('快速');
+  if (hints?.reasoning) out.push('思考过程');
   return out;
 }
 
@@ -143,12 +143,12 @@ export function hintBadges(hints: ModelHints | undefined): string[] {
 export function formatContext(tokens: number): string | null {
   if (!Number.isFinite(tokens) || tokens <= 0) return null;
   if (tokens >= 1_000_000) {
-    return `${trimDecimal(tokens / 1_000_000)}M context`;
+    return `${trimDecimal(tokens / 1_000_000)}M 上下文`;
   }
   if (tokens >= 1000) {
-    return `${trimDecimal(tokens / 1000)}K context`;
+    return `${trimDecimal(tokens / 1000)}K 上下文`;
   }
-  return `${Math.round(tokens)} context`;
+  return `${Math.round(tokens)} 上下文`;
 }
 
 /** True when a free-tier Nous account cannot pick this (paid) model. */
@@ -159,9 +159,9 @@ export function isModelUnavailable(row: ProviderRow, modelId: string): boolean {
 /** Summary badges for the current model's capabilities (info endpoint shape). */
 export function capabilityBadges(caps: ModelCapabilities | undefined): string[] {
   const out: string[] = [];
-  if (caps?.supports_reasoning) out.push('Reasoning');
-  if (caps?.supports_vision) out.push('Vision');
-  if (caps?.supports_tools) out.push('Tools');
+  if (caps?.supports_reasoning) out.push('思考过程');
+  if (caps?.supports_vision) out.push('视觉');
+  if (caps?.supports_tools) out.push('工具');
   return out;
 }
 

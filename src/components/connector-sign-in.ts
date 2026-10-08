@@ -111,7 +111,7 @@ export function useConnectorSignIn(
 
   const signIn = useCallback(
     async (name: string): Promise<OauthOutcome> => {
-      if (running.current) return { kind: 'error', message: 'A sign-in is already running.' };
+      if (running.current) return { kind: 'error', message: '已有登录流程正在进行。' };
       const base = gatewayBaseUrl();
       if (!base || !gatewaySupportsOauth(base)) return { kind: 'error', message: OAUTH_NEEDS_HTTPS };
       running.current = true;

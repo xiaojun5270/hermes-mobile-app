@@ -5,7 +5,7 @@ import {
   migrateStoredConnection,
 } from '../src/lib/stored-connection';
 
-describe('migrateStoredConnection', () => {
+describe('migrateStored连接', () => {
   it('migrates a v1 (M1 password) blob to v2 password mode', () => {
     const v1 = JSON.stringify({
       baseUrl: 'http://100.64.0.7:9119',
@@ -67,7 +67,7 @@ describe('migrateStoredConnection', () => {
     ['missing baseUrl', JSON.stringify({ username: 'u', password: 'p', cookies: {} })],
     ['empty baseUrl', JSON.stringify({ baseUrl: '', username: 'u', password: 'p' })],
     ['v1 without credentials', JSON.stringify({ baseUrl: 'http://gw', cookies: {} })],
-  ])('throws StoredConnectionError on %s', (_name, raw) => {
+  ])('throws Stored连接Error on %s', (_name, raw) => {
     expect(() => migrateStoredConnection(raw)).toThrow(StoredConnectionError);
   });
 });

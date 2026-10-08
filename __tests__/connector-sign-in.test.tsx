@@ -98,21 +98,21 @@ test('refuses on a gateway that is not https, without any request', async () => 
   });
   expect(outcome).toEqual({
     kind: 'error',
-    message: 'Sign-in needs the gateway on an https:// address; providers do not accept a plain-HTTP redirect.',
+    message: '登录需要网关使用 HTTPS 地址，提供商不接受普通 HTTP 回调。',
   });
   expect(mockStart).not.toHaveBeenCalled();
   expect(openBrowser).not.toHaveBeenCalled();
 });
 
 test('the approved path: opens the page, returns the tools, closes the page and clears the phase', async () => {
-  mockPoll.mockResolvedValueOnce(flow()).mockResolvedValue(flow({ status: 'approved', tools: [{ name: 'search', description: 'Search' }] }));
+  mockPoll.mockResolvedValueOnce(flow()).mockResolvedValue(flow({ status: 'approved', tools: [{ name: 'search', description: '搜索会话' }] }));
   const t = timing();
   const { result } = await renderHook(() => useConnectorSignIn('work', t));
   let outcome: unknown;
   await act(async () => {
     outcome = await result.current.signIn('linear');
   });
-  expect(outcome).toEqual({ kind: 'approved', tools: [{ name: 'search', description: 'Search' }] });
+  expect(outcome).toEqual({ kind: 'approved', tools: [{ name: 'search', description: '搜索会话' }] });
   expect(mockStart).toHaveBeenCalledWith({}, 'linear', 'work');
   expect(openBrowser).toHaveBeenCalledWith(AUTH_URL, expect.anything());
   expect(dismissBrowser).toHaveBeenCalled();
@@ -177,7 +177,7 @@ test('a second sign-in while one runs is refused, and is not reported as cancell
   await act(async () => {
     second = await result.current.signIn('linear');
   });
-  expect(second).toEqual({ kind: 'error', message: 'A sign-in is already running.' });
+  expect(second).toEqual({ kind: 'error', message: '已有登录流程正在进行。' });
   expect(mockStart).toHaveBeenCalledTimes(1);
   await act(async () => result.current.cancel());
   await until(() => first);
@@ -252,7 +252,7 @@ test('an open that answers `locked` is a failure to open', async () => {
   await act(async () => {
     outcome = await result.current.signIn('linear');
   });
-  expect(outcome).toEqual({ kind: 'error', message: 'Could not open the sign-in page.' });
+  expect(outcome).toEqual({ kind: 'error', message: '无法打开登录页面。' });
   expect(mockCancel).toHaveBeenCalledWith({}, 'f1');
 });
 

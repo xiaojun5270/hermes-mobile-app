@@ -43,11 +43,11 @@ async function openEditor() {
   );
   await act(async () => router.push('/memory-file?name=USER.md'));
   await screen.findByText('old');
-  await act(async () => fireEvent.press(screen.getByLabelText('Edit')));
+  await act(async () => fireEvent.press(screen.getByLabelText('编辑')));
 }
 
 const counterPaddingBottom = () =>
-  StyleSheet.flatten(screen.getByLabelText(/^File size /).props.style).paddingBottom;
+  StyleSheet.flatten(screen.getByLabelText(/^文件大小 /).props.style).paddingBottom;
 
 test('keyboard hidden: the size counter clears the home indicator', async () => {
   await openEditor();

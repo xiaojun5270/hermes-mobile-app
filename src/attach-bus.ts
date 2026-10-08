@@ -3,7 +3,7 @@
 // screen registers a handler on mount; the sheet fires an action right before
 // dismissing itself.
 
-export type AttachAction = 'camera' | 'library';
+export type AttachAction = 'camera' | 'library' | 'files';
 
 let handler: ((action: AttachAction) => void) | null = null;
 

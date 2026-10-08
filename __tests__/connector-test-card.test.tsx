@@ -8,7 +8,7 @@ const noop = () => {};
 test('idle and connected: an enabled Test button, no result', async () => {
   const onTest = jest.fn();
   await render(<ConnectorTestCard state={{ phase: 'idle' }} connected onTest={onTest} />);
-  const button = screen.getByRole('button', { name: 'Test connection' });
+  const button = screen.getByRole('button', { name: '测试连接' });
   expect(button).not.toBeDisabled();
   fireEvent.press(button);
   expect(onTest).toHaveBeenCalledTimes(1);
@@ -16,14 +16,14 @@ test('idle and connected: an enabled Test button, no result', async () => {
 
 test('not connected: the button is disabled and the reason is shown (review focus 1)', async () => {
   await render(<ConnectorTestCard state={{ phase: 'idle' }} connected={false} onTest={noop} />);
-  expect(screen.getByRole('button', { name: 'Test connection' })).toBeDisabled();
-  expect(screen.getByText('Testing needs a connected chat. Go back to the chat, wait for it to connect, then return.')).toBeTruthy();
+  expect(screen.getByRole('button', { name: '测试连接' })).toBeDisabled();
+  expect(screen.getByText('请先返回会话并等待连接成功，再回来测试。')).toBeTruthy();
 });
 
 test('running: the button is disabled and says Testing', async () => {
   await render(<ConnectorTestCard state={{ phase: 'running' }} connected onTest={noop} />);
-  expect(screen.getByRole('button', { name: 'Test connection' })).toBeDisabled();
-  expect(screen.getByText('Testing…')).toBeTruthy();
+  expect(screen.getByRole('button', { name: '测试连接' })).toBeDisabled();
+  expect(screen.getByText('正在测试…')).toBeTruthy();
 });
 
 test('a passed test shows the summary and each tool', async () => {
@@ -46,7 +46,7 @@ test('a passed test shows the summary and each tool', async () => {
       }}
     />,
   );
-  expect(screen.getByText('Working · 2 tools · 1 prompt')).toHaveStyle({ color: colors.success });
+  expect(screen.getByText('连接正常 · 2 个工具 · 1 个提示词')).toHaveStyle({ color: colors.success });
   expect(screen.getByText('search_issues')).toBeTruthy();
   expect(screen.getByText('Search issues')).toBeTruthy();
   expect(screen.getByText('create_issue')).toBeTruthy();
@@ -71,7 +71,7 @@ test('a provider that refused the gateway’s redirect address: one readable lin
   await render(
     <ConnectorTestCard connected onTest={noop} state={{ phase: 'done', outcome: { kind: 'failed', message: raw, oauthNeeded: true, tokensPresent: false } }} />,
   );
-  const text = screen.getByText('Sign-in is not set up: the server does not allow this gateway’s redirect address.');
+  const text = screen.getByText('登录尚未配置，服务器不允许此网关的回调地址。');
   expect(text).toHaveStyle({ color: colors.danger });
   expect(screen.queryByText(/invalid_client_metadata/)).toBeNull();
 });
@@ -88,10 +88,10 @@ test('another registration refusal keeps the provider’s reason, unless the sig
   };
   const { rerender } = await render(<ConnectorTestCard connected onTest={noop} state={state} />);
   expect(
-    screen.getByText('Sign-in is not set up: the server refused to register this gateway (HTTP 403). It said: “Dynamic registration is disabled”'),
+    screen.getByText('登录尚未配置，服务器拒绝注册此网关（HTTP 403). 返回信息：“Dynamic registration is disabled”'),
   ).toBeTruthy();
   await rerender(<ConnectorTestCard connected onTest={noop} state={state} explainedAbove />);
-  expect(screen.getByText('Sign-in is not set up: the server refused to register this gateway (HTTP 403).')).toBeTruthy();
+  expect(screen.getByText('登录尚未配置，服务器拒绝注册此网关（HTTP 403).')).toBeTruthy();
 });
 
 test('a call error is shown the same way', async () => {

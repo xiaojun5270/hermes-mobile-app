@@ -81,7 +81,7 @@ test('B1: a steered bubble appended mid-stream closes the streaming segment firs
 // A history reload can already hold the stopped turn's marker (the gateway stores its closing row
 // before it sends message.complete); the complete that then arrives live must not add a second one.
 describe('appendStoppedMarker', () => {
-  const marker = (key: string): ChatItem => ({ key, role: 'status', text: 'Stopped', marker: 'stopped' });
+  const marker = (key: string): ChatItem => ({ key, role: 'status', text: '已停止', marker: 'stopped' });
 
   test('appends the marker after the last row', () => {
     expect(appendStoppedMarker([item('i0')], marker('i1'))).toEqual([item('i0'), marker('i1')]);

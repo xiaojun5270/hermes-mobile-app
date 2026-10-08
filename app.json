@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "Hermes Agent Mobile",
+    "name": "Hermes 智能体",
     "slug": "hermes-mobile-app",
-    "version": "1.0.0",
+    "version": "1.0.2",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "hermesmobileapp",
@@ -10,7 +10,13 @@
     "ios": {
       "icon": "./assets/hermes-agent.icon",
       "bundleIdentifier": "com.dintinoconte.hermesmobile",
+      "buildNumber": "3",
       "infoPlist": {
+        "CFBundleDevelopmentRegion": "zh_CN",
+        "CFBundleLocalizations": ["zh_CN"],
+        "CFBundleAllowMixedLocalizations": true,
+        "NSMicrophoneUsageDescription": "Hermes 仅在你主动录制音频时使用麦克风。",
+        "NSPhotoLibraryAddUsageDescription": "Hermes 仅在你主动保存图片时写入照片图库。",
         "NSAppTransportSecurity": {
           "NSAllowsArbitraryLoads": true
         },
@@ -59,20 +65,21 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Hermes scans the pairing QR code shown by 'hermes mobile pair' to connect to your gateway."
+          "cameraPermission": "Hermes 使用相机扫描配对二维码，连接你自己的网关。"
         }
       ],
       [
         "expo-image-picker",
         {
-          "photosPermission": "Hermes attaches photos you choose to your messages.",
-          "cameraPermission": "Hermes lets you photograph something and send it to your agent."
+          "photosPermission": "Hermes 将你选择的照片添加到消息中。",
+          "cameraPermission": "Hermes 使用相机扫描配对二维码，或拍摄你要发送给智能体的照片。",
+          "microphonePermission": "Hermes 仅在你主动录制音频时使用麦克风。"
         }
       ],
       [
         "expo-local-authentication",
         {
-          "faceIDPermission": "Hermes asks for Face ID before sending a password or secret to your gateway."
+          "faceIDPermission": "Hermes 在向你的网关发送密码或密钥前，使用 Face ID 验证你的身份。"
         }
       ],
       [
